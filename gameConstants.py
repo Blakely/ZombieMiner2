@@ -1,15 +1,21 @@
 #Filename: gameConstants.py
 #Author: Ryan Blakely
 #Last Modified By: Ryan Blakely
-#Last Modified: July 15th, 2013
+#Last Modified: July 29th, 2013
 #Description: Constants required for the ZombieMiner.py game
+
+#Revision History:
+# July 29 - fixed constants to speed up game
 
 import pygame
 from pygame.locals import *
 
-#width,height in position tuples, etc etc...
+#x,y,width,height in position tuples and Rect's, etc etc...
 X=0
 Y=1
+W=2
+H=3
+R=2 #radius (for circles - x,y,r)
 
 #direction constants...
 DIR_RIGHT=0
@@ -26,6 +32,7 @@ ACT_DIG=2
 SCREEN_SIZE=(500,500)
 FLIPVAL="^"
 WIN_POS=(48,48) #winning tile position
+FOV_OFFSET=(15,15) #offset to center the FOV on the character
 
 #map constants
 MAP_SIZE=(50,50)
@@ -35,6 +42,11 @@ MAP_FILE_DLIM='\t'
 #tile constants
 TILE_TRANSCOLOR = Color(255,0,255)
 TILE_SIZE=(48,48)
+
+#return variables from the handler functions
+WIN_STAT = 0 #stat window needs to be updated
+WIN_END = 1 #end-game window needs to be updated
+
 
 #image file locations
 IMG_DIR = 'images/'
@@ -55,8 +67,8 @@ SPRITE_TEMPLATE=[[['0'],['^0']], #standing
                 [['4','5','6','7'],['^4','^5','^6','^7']]] #axing
 FIRE_TEMPLATE=[[['0','1','2','^1','3','^2','0','3','2']]] #uses a template/spriteset so it can have duplicates of frames 
 #sprite animation delay "bases"
-SPRITE_FRAME_DELAY = 800 #delay between frames
-SPRITE_ACT_DELAY = 400 #delay between acts
+SPRITE_FRAME_DELAY = 50 #delay between frames
+SPRITE_ACT_DELAY = 50 #delay between acts
 SPRITE_MASK_DELAY = 200 #delay between mask ani frames
 
 #miner statistic constants
@@ -68,13 +80,13 @@ STAT_BAG = 'bag' #players current bag (list)
 STAT_ORIGINAL_BAG='origBag' #the original bag size assigned to the player at game runtime
 
 #player constants
-PLAYER_STATS = {STAT_SP:1,STAT_STR:1,STAT_MAXBAG:4,STAT_MONEY:0} #player initial stats
+PLAYER_STATS = {STAT_SP:1,STAT_STR:4,STAT_MAXBAG:4,STAT_MONEY:0} #player initial stats
 PLAYER_STARTPOS = (4,4) #players initial position
 
 #zombie constants
-ZOMBIE_NUM=10 #number of zombies
-ZOMBIE_STR=0.01 #zombie base str
-ZOMBIE_SP=0.03 #zombie base sp
+ZOMBIE_NUM=15 #number of zombies
+ZOMBIE_STR=0.1 #zombie base str
+ZOMBIE_SP=0.1 #zombie base sp
 
 #special mines (tiles)
 MINE_DUG = 21

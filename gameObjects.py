@@ -214,7 +214,7 @@ class TileMap(list):
     #max (tuple) - the maximum allowed absolute position for the bottom right corner
     def move(self,shift,min=None,max=None):
         #adjusts shift vector based on bounds for shifting
-        if (min): #minumum bound 
+        if (min): #minumum bound
             if (self[0][0].pos[Y]+self.shift[Y]>=min[Y] and shift[Y]>0):
                 shift=(shift[X],0)
             if (self[0][0].pos[X]+self.shift[X]>=min[X] and shift[X]>0):
@@ -368,13 +368,14 @@ class Miner(Drawable):
         self.maskFrame=0
         self.spriteset = spriteset
         self.stats = stats
+        self.actTile = None #tile currently being acted on by the miner
         
         if(STAT_MAXBAG in self.stats.keys()):
             self.stats[STAT_ORIGINAL_BAG]=self.stats[STAT_MAXBAG]
             self.stats[STAT_BAG]=list()
         
         #get the absolute position of the miner (framesize*given pos)
-        absPos = (pos[X]*spriteset.frameSize[X],pos[Y]*spriteset.frameSize[Y])
+        absPos = (pos[X]*self.spriteset.frameSize[X],pos[Y]*self.spriteset.frameSize[Y])
         super(Miner, self).__init__(absPos,spriteset[self.act][self.dir][self.frame])
         
         #setup antimation-related timer variables
@@ -476,9 +477,13 @@ class Miner(Drawable):
                     
                     #reset for next act
                     self.act=0
+                    lastDist=self.stepDist
                     self.stepDist=0
                     
-                    return returnAct;
+                    if(lastDist!=(0,0)):
+                        return (lastDist)
+                    
+                    return returnAct
                 
                 #if we moved but didn't complete the act return the distance tuple
                 if(self.stepDist!=(0,0)):
@@ -547,6 +552,10 @@ class Miner(Drawable):
     #gets the players current position (tile based, not absolute)
     def getPos(self):
         return (self.pos[X]/self.spriteset.frameSize[X],self.pos[Y]/self.spriteset.frameSize[Y])
+    
+    def setPos(self,pos):
+        absPos = (pos[X]*self.spriteset.frameSize[X],pos[Y]*self.spriteset.frameSize[Y])
+        self.pos = absPos
 
 #A very simple target-based AI
 #target (Miner) - the target of the AI
