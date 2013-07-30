@@ -4,6 +4,15 @@
 #Last Modified: July 15th, 2013
 #Description: Objects required for the ZombieMiner.py game
 
+#Revision History
+# June 30th 2013
+#   - added updateframe to player
+#   - changed getPos to getDirtyPos and wrote a more accurate getPos
+#   - fixed bug in randomMapTemplate where it would break and not append an item, resulting in occasionally shorter rows
+#   - added constant values for tile(mine) attributes
+#   - added updateHp() for tiles, changing the tile (change()) wouldnt update the HP, so i streamlined it
+#     ...this was the cause of the winningtile not working properly all the time
+#   - fixed bug where the base stats for the player wouldnt reset because the miner wasn't making a copy of the stats, but instead modifying them directly
 
 import pygame,math,random,re
 from pygame.locals import *
@@ -55,11 +64,9 @@ class Drawable(object):
 class Tile(Drawable):
     #initializes the tile. mostly hskpg. 
     def __init__(self,attributes,pos=(0,0),img=None,maskFrames=None):
+        #initialize tiles attributes
         self.setAttributes(attributes)
-        
-        #if the tile can be hit, init its HP
-        if (self.attributes.has_key('hits')):
-            self.attributes['hp']=self.attributes['hits']
+        self.updateHp()
         
         super(Tile, self).__init__(pos,img,maskFrames) #SUPER TO DRAWABLE!
     
@@ -69,11 +76,18 @@ class Tile(Drawable):
         #make a copy of the attributes so they can be modifed and not affect other tiles using the same ones
         self.attributes = attributes.copy()
     
+    #update the tiles hp if it has a hit value
+    def updateHp(self):
+        #if the tile can be hit, init its HP
+        if (self.attributes.has_key(ATTR_HITS)):
+            self.attributes[ATTR_HP]=self.attributes[ATTR_HITS]
+    
     #change the tile, both attributes and image
     #newAtt (dict) - the new attributes
     #newImg (pygame Surface) - the new image
     def change(self,newAtt,newImg):
         self.setAttributes(newAtt)
+        self.updateHp()
         self.img = newImg
     
     #hit the tile for a certain amount of damage
@@ -81,18 +95,18 @@ class Tile(Drawable):
     #returns - the tiles value if it breaks, or None if you cant hit the tile
     def hit(self,dmg):
         #if the tile has hp, hit it!
-        if (self.attributes.has_key('hp')):
-            self.attributes['hp']-=dmg
-           
+        if (self.attributes.has_key(ATTR_HP)):
+            self.attributes[ATTR_HP]-=dmg
+
             #if hp hits 0, reset the mask and return its value
-            if(self.attributes['hp']<=0):
+            if(self.attributes[ATTR_HP]<=0):
                 self.maskImg=None
-                return self.attributes['value']
+                return self.attributes[ATTR_VAL]
             
             #if there are mask imgs, determine which mask img to use based on the state of the hp & number of mask frames
             if(self.maskSet):
                 #small note - cast hits to float to force float division in py2.7
-                maskState=int(len(self.maskSet)/(float(self.attributes['hits'])/self.attributes['hp']))
+                maskState=int(len(self.maskSet)/(float(self.attributes[ATTR_HITS])/self.attributes[ATTR_HP]))
                 self.maskImg=self.maskSet[-maskState-1]    
         
         return None
@@ -186,7 +200,7 @@ class TileMap(list):
         for row in range(0,len(template)):
             #create a list to hold that row
             self.append(list())
-            
+
             #loop through each column (of each row) in the template
             for col in range(0,len(template[row])):
                 #get the position and img of the tile in that row+column
@@ -257,7 +271,10 @@ class TileMap(list):
     #pos - tile based position
     #returns - the tile at that position
     def getTile(self,pos):
-        return self[pos[Y]][pos[X]]
+        try:
+            return self[pos[Y]][pos[X]]
+        except IndexError:
+            print str(pos[Y]) + " " + str(pos[X]) + " " + str(len(self)) + " " + str(len(self[len(self)-1]))
     
     #gets the absolute size of the map
     def getAbsSize(self):
@@ -308,14 +325,14 @@ class mapReader(list):
 #tileTemplates (dict) - a dictionary holding many different tile variables (chance to be used,type of tile, etc etc)
 class randomMapTemplate(list):
     #intializes the tilemap - randomly places tiles using a weighted algorithm
-    def __init__(self,size,tileTemplates):
+    def __init__(self,size,tileTemplates,defaultTile):
         self.size=size
         
         #for weighted random item selection algorithm - sums up total chance
-        chanceSum = 0;
+        chanceSum = 0
         for cs in tileTemplates.keys():
-            chanceSum+=tileTemplates[cs]['chance']
-        
+            chanceSum+=tileTemplates[cs][ATTR_CHANCE]
+
         #create the random tilemap, row by row, col by col
         for row in range(0,self.size[Y]):
             self.append(list())
@@ -326,11 +343,17 @@ class randomMapTemplate(list):
                 
                 #loop through each tile in the tile templates to determine if the random chance has selected it
                 for c in tileTemplates.keys():
-                    chance = tileTemplates[c]['chance']
-                    if(rnd<chance): #if so, set it and go to the next column
-                        self[row].append(c)
+                    chance = tileTemplates[c][ATTR_CHANCE]
+                    if(rnd<chance): #if so, exit the loop
                         break
                     rnd-=chance
+                
+                #if the tile came upon is actually "chanceable", add it to the template  (FIXED)
+                if (chance!=0):
+                    self[row].append(c)
+                else: #otherwise add the defaultTile
+                    self[row].append(defaultTile)
+            
 
     #sets the border of the tilemap template to a particular value
     #borderVal - the value to set the border to
@@ -367,7 +390,7 @@ class Miner(Drawable):
         self.frame = 0
         self.maskFrame=0
         self.spriteset = spriteset
-        self.stats = stats
+        self.stats = stats.copy() #(FIXED)
         self.actTile = None #tile currently being acted on by the miner
         
         if(STAT_MAXBAG in self.stats.keys()):
@@ -422,10 +445,13 @@ class Miner(Drawable):
                     self.frame = 0
                     
                 #change the current image to the current frame
-                self.img = self.spriteset[self.act][self.dir][self.frame]
+                self.updateFrame()
                 self.lastMod=elapsed
                 return True
         return False     
+    
+    def updateFrame(self):
+        self.img = self.spriteset[self.act][self.dir][self.frame]
     
     #updates all the players complex stats (e.g. max bag size, animation delays) based on the base stats (str, speed)
     def updateStats(self):
@@ -464,7 +490,6 @@ class Miner(Drawable):
     #        - None otherwise
     def update(self):
         returnAct = self.act
-        
         #if the miner is currently doing something
         if (self.act>ACT_NONE):
             #try to animate. if its time...
@@ -551,6 +576,17 @@ class Miner(Drawable):
     
     #gets the players current position (tile based, not absolute)
     def getPos(self):
+        if self.dir==DIR_RIGHT:
+            return (int(math.floor(self.pos[X]*1.0/self.spriteset.frameSize[X])),self.pos[Y]/self.spriteset.frameSize[Y])
+        elif (self.dir==DIR_LEFT):
+            return (int(math.ceil(self.pos[X]*1.0/self.spriteset.frameSize[X])),self.pos[Y]/self.spriteset.frameSize[Y])
+        elif (self.dir==DIR_UP):
+            return (self.pos[X]/self.spriteset.frameSize[X],int(math.floor(self.pos[Y]*1.0/self.spriteset.frameSize[Y])))
+        elif (self.dir==DIR_DOWN):
+            return (self.pos[X]/self.spriteset.frameSize[X],int(math.ceil(self.pos[Y]*1.0/self.spriteset.frameSize[Y])))
+    
+    #gets the players current position (tile based, not absolute) - isn't accurate, doesnt respond well to walking
+    def getDirtyPos(self):
         return (self.pos[X]/self.spriteset.frameSize[X],self.pos[Y]/self.spriteset.frameSize[Y])
     
     def setPos(self,pos):
@@ -586,7 +622,7 @@ class AI(object):
             #check each surrounding in the "check order"
             for direction in chkOrder:
                 #check the direction to make sure its not blocked, if not, return it
-                if(nearTiles[direction].attributes['type']!=MINE_BLOCK_FULL):
+                if(nearTiles[direction].attributes[ATTR_TYPE]!=MINE_BLOCK_FULL):
                     return direction
             
         return DIR_LEFT #default to trying to go left - doesn't matter, AI cant move

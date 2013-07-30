@@ -5,8 +5,34 @@
 #Description: A Simple mining game in which the player must collect mines and avoid zombies.
 
 
-#Revision History:
-# 001 - Original game + fov testing (drawFOV())
+"""
+Revision History:
+ 001  July 29,2013
+      - Original game 
+      - fov testing (drawFOV())
+      - handlePlayer/Zombies (moved code from game loop)
+      - testing various zombie collision logic change (clearing bag, resetting player pos, etc)
+      - added resetPlayer
+      
+ 002  June 30,2013
+      - added a second "type" of zombie...employs same logic and stats
+      - added centerpos constant for player instead of using startpos in scrollmap
+      - handleZombie changed to handle different zombie types
+      - more on handleZombie to check for sunlight before killing player. also stops zombie from moving
+      - fixed handleZombie bug where it wouldnt entirely reach the tile and die...this was fixed with the dirtyPos fix
+      - fixed resetPlayer bug where he could keep up after being reset (resets stepDist and act now)
+      - "pixel perfect" (uses exact position) vs getPos which uses tilebased posit
+      
+ 003  June 30, 2013
+      - Finally fixed that stupid bug where if a zombie was dying it would freeze up (seemingly) random other zombies
+        ... the "continue" line in handleZombies, instead of having break there.
+      - added title to menu.png!
+      - fixed the winningTile bug where it couldnt be broken
+      - finally fixed a randomMapTemplate bug where it wasn't always making a full row of tiles (minor change in weighted random algorithm)
+        ... added a default tile param
+      - fixed scrolling edge bug (not letting you go up and down at the right side)...just a matter of an X where there needed to be a Y
+      - changed up the fonts size and styles...gui doesnt entirely line up anymore, but im going to save that for the next iteration
+"""
 
 #import needed modules for pygame
 import pygame, sys
@@ -23,10 +49,8 @@ from gameObjects import *
 
 #Create any constants that require game objects to first be imported
 #windows image set for drawing windows
-WINSET_PNLSIZE=(350,20)
 WINSET = ImageSet(IMG_WINSET,WINSET_PNLSIZE,TILE_TRANSCOLOR)
 #button imageset for drawing buttons
-BTNSET_PNLSIZE=(20,20)
 BTNSET=ImageSet(IMG_BTNSET,BTNSET_PNLSIZE,TILE_TRANSCOLOR)
 
                 
@@ -84,11 +108,15 @@ def tryAction(screen,miner,direction,tilemap):
 #moveVect (tuple) - the scroll vector
 def scrollMap(screen,player,tilemap,moveVect):
     #if the player has reached an edge of the map on the x-axis, dont move the map in that direction anymore
-    if (player.getPos()[X]<PLAYER_STARTPOS[X] or player.getPos()[X]>tilemap.getSize()[X]-PLAYER_STARTPOS[X] or player.getPos()[X]==PLAYER_STARTPOS[X] and player.dir==DIR_RIGHT):
+    if (player.getPos()[X]<PLAYER_CENTERPOS[X]
+        or player.getPos()[X]>tilemap.getSize()[X]-PLAYER_CENTERPOS[X]-1
+        or player.getPos()[X]==PLAYER_CENTERPOS[X] and player.dir==DIR_RIGHT):
         moveVect=(0,moveVect[Y])
     
-    #if the player has reached an edge of the map on the y-axis, dont move the map in that direction anymore
-    if (player.getPos()[Y]<PLAYER_STARTPOS[Y] or player.getPos()[X]>tilemap.getSize()[Y]-PLAYER_STARTPOS[Y]):
+    #if the player has reached an edge of the map on the y-axis, dont move the map in that direction anymore (FIXED)
+    if (player.getPos()[Y]<PLAYER_CENTERPOS[Y]
+        or player.getPos()[Y]>tilemap.getSize()[Y]-PLAYER_CENTERPOS[Y]
+        or player.getPos()[Y]==PLAYER_CENTERPOS[Y] and player.dir==DIR_DOWN):
         moveVect=(moveVect[X],0)
     
     tilemap.move((-moveVect[X],-moveVect[Y]),(0,0),screen.get_size())
@@ -99,18 +127,22 @@ def scrollMap(screen,player,tilemap,moveVect):
 #spriteTemplate (3d list) - the sprite template for the zombies
 #player (Miner) - the player, AKA the zombies (ai's) target
 #startPos (tuple) - the start position on the tilemap to start allowing zombies (wont allow placement < startPos)
-def createZombies(tilemap,tileset,spriteTemplate,player,startPos=(0,0)):
-    zombieImg=loadImage(IMG_ZOMBIE,TILE_TRANSCOLOR) #load spriteset image for zombies
-    zombieAI = AI(player) #setup a simple AI that targets the player
+def createZombies(img,num,stats,tilemap,tileset,spriteTemplate,target,startPos=(0,0)):
+    zombieImg=loadImage(img,TILE_TRANSCOLOR) #load spriteset image for zombies
+    zombieAI = AI(target) #setup a simple AI that targets the player
     
     zombies=list() #holder list for zombies
     
-    #create ZOMBIE_NUM # of zombies
-    for z in range(0,ZOMBIE_NUM):
+    #create given # of zombies
+    for z in range(0,num):
         #randomly choose a position for the zombie to start -- goes to width -1 and height - 1, to account for border
         randomPos = (random.randint(startPos[X],tilemap.getSize()[X]-2),random.randint(startPos[Y],tilemap.getSize()[Y]-2))
-        #base stats on the random position - further down zombies will be harder/faster
-        zombieStats = {STAT_SP:ZOMBIE_SP*(randomPos[X]+randomPos[Y])/2,STAT_STR:ZOMBIE_STR*(randomPos[X]+randomPos[Y])/2}
+        
+        zombieStats = dict(stats).copy() #make a copy of the stats soas not to effect other zombies
+        
+        #mod base stats based on the random position - further down zombies will be harder/faster
+        zombieStats[STAT_SP]=stats[STAT_SP]*(randomPos[X]+randomPos[Y])/2
+        zombieStats[STAT_STR]=stats[STAT_STR]*(randomPos[X]+randomPos[Y])/2
         
         #create a new zombie and add it to the list of zombies
         zombie = Mob(randomPos,SpriteSet(zombieImg,SPRITE_SIZE,spriteTemplate),zombieStats,zombieAI)
@@ -141,13 +173,13 @@ def buyStat(player,stat,cost):
 def createStatWin(player):
     #ui elements for stats window
     statLbls = [Label((80,0),"Strength: " + str(player.stats[STAT_STR]),WIN_FONT_SMALL,WIN_FONT_COLOR),
-                Label((80,18),"Speed   : " + str(player.stats[STAT_SP]),WIN_FONT_SMALL,WIN_FONT_COLOR),
-                Label((190,0), "Bag     : " + str(len(player.stats[STAT_BAG])) + " / " + str(player.stats[STAT_MAXBAG]),
+                Label((80,18),"Speed  : " + str(player.stats[STAT_SP]),WIN_FONT_SMALL,WIN_FONT_COLOR),
+                Label((190,0), "Bag   : " + str(len(player.stats[STAT_BAG])) + "/" + str(player.stats[STAT_MAXBAG]),
                       WIN_FONT_SMALL,WIN_FONT_COLOR),
-                Label((190,18),"Money   : " + str(player.stats[STAT_MONEY]),WIN_FONT_SMALL,WIN_FONT_COLOR)]
+                Label((190,18),"Money : " + str(player.stats[STAT_MONEY]),WIN_FONT_SMALL,WIN_FONT_COLOR)]
     
     #create the stat window
-    statWin = Window((ALIGN_CENTER,ALIGN_BOTTOM),WINSET,0,None,statLbls)
+    statWin = Window((ALIGN_CENTER,ALIGN_BOTTOM),WINSET,1,None,statLbls)
     
     return statWin
 
@@ -207,10 +239,15 @@ def drawFOV(screen,tilemap,player,transColor,clearings=None):
     fovImg.set_colorkey(transColor)
     screen.blit(fovImg,(0,0))
 
-def resetPlayer(player,tilemap):
-    player.clearBag()
+def resetPlayer(player):
     player.setPos(PLAYER_STARTPOS)
-    tilemap.shift=(0,0)
+    player.lastMod+= 1000
+    player.frame=0
+    player.act=ACT_NONE
+    player.stepDist=(0,0)
+    player.actTile=None
+    player.updateFrame()
+
 
 def handlePlayer(screen,tilemap,tileset,player):
     #update the player and get the returned action data
@@ -231,7 +268,7 @@ def handlePlayer(screen,tilemap,tileset,player):
         if(pHitResult!=None):
             pHitTile.change(mines[MINE_DUG],tileset[MINE_DUG]) #set the dug-out tiles attributes and image to "dug" tile
             
-            #if the player just broke thewinning mine, show the winning game screen
+            #if the player just broke the winning mine, show the winning game screen
             if(pHitResult==MINE_VAL_WIN):
                 return WIN_END
                 
@@ -241,28 +278,40 @@ def handlePlayer(screen,tilemap,tileset,player):
     
     return None
 
-def handleZombies(screen,tilemap,tileset,zombies,actTile,player,fireSet):
+def handleZombies(screen,tilemap,tileset,zombies,player,fireSet):
     #loop through each zombie to update
     for z in range(0,len(zombies)):
         zombie=zombies[z]
         
-        #if the zombie is touching the player - game over!
-        # (Ryan 07-29): "pixel perfect" (uses exact position) vs getPos which uses tilebased posit
-        if (zombie.pos == player.pos):
-            #FIX - badass zombie
-            #return WIN_END
-            
-            #basic zombie
-            resetPlayer(player,tilemap)
-            return WIN_STAT
-        
-        #otherwise, if the zombie is outside...
-        elif (tilemap.getTile(zombie.getPos()).attributes['type']==MINE_BLOCK_UP):
+        #if the zombie is outside...
+        if (tilemap.getTile(zombie.getPos()).attributes['type']==MINE_BLOCK_UP):
             #dying animation. when the animation is complete, remove the zombie from the tilemap and the game
             if(zombie.dying(fireSet,SPRITE_MASK_DELAY)):
                 tilemap.clearMob(z)
                 zombies.remove(zombie)
                 break
+            continue #go to next zombie!
+        
+        #otherwise if the zombie is touching the player - game over!
+        elif (zombie.pos == player.pos):
+            #if its a killer zombie, end the game.
+            if(zombie.stats[STAT_TYPE]==ZOMBIE_TYPE_KILL):
+                return WIN_END
+            
+            #if its a cash zombie, steal the players cash and bag
+            elif(zombie.stats[STAT_TYPE]==ZOMBIE_TYPE_CASH):
+                player.money=0
+                player.clearBag()
+            
+            #if its an easy zombie, steal the bag and send player
+            elif (zombie.stats[STAT_TYPE]==ZOMBIE_TYPE_EZ):
+                #basic zombie - clear the players bag and return him to home
+                resetPlayer(player)
+                player.clearBag()
+                tilemap.shift=(0,0)
+            
+            #if the game didn't end, the stat window needs to be updated
+            return WIN_STAT
         
         #let the AI kick in to choose a direction,then try and act in that direction
         nearTiles=tilemap.getNearTiles(zombie.getPos()) #get tiles around zombie
@@ -297,8 +346,9 @@ def game(screen):
     playerImg=loadImage(IMG_PLAYER,TILE_TRANSCOLOR) #load the spriteset image for the player (miner)
     player = Miner(PLAYER_STARTPOS,SpriteSet(playerImg,SPRITE_SIZE,SPRITE_TEMPLATE),PLAYER_STATS)
     
+    
     #create the template for the mine map
-    template=randomMapTemplate(MAP_SIZE,mines) #create random map template of mines
+    template=randomMapTemplate(MAP_SIZE,mines,MINE_ROCK) #create random map template of mines
     template.setBorder(MINE_ROCK) #set the border to be all unbreakable bricks
     aboveground=mapReader(MAP_FILE,MAP_FILE_DLIM) #load in custom map for aboveground
     template.setArea((0,0),aboveground) #combine random minemap with aboveground map @ top left corner
@@ -309,8 +359,14 @@ def game(screen):
 
     #create the TileMap for the game and create/add zombies
     tilemap=TileMap(template,tileset,TILE_SIZE,player,maskSet)
-    zombies=createZombies(tilemap,tileset,SPRITE_TEMPLATE,player,(1,len(aboveground))) 
-    tilemap.addMobs(zombies)
+    
+    #create ez zombies and cash zombies
+    ezZombies=createZombies(IMG_ZOMBIE_EZ,ZOMBIE_EZ_NUM,ZOMBIE_EZ_STATS,tilemap,tileset,SPRITE_TEMPLATE,player,(1,len(aboveground)))
+    cashZombies=createZombies(IMG_ZOMBIE_CASH,ZOMBIE_CASH_NUM,ZOMBIE_CASH_STATS,tilemap,tileset,SPRITE_TEMPLATE,player,(1,len(aboveground)))
+    zombies=ezZombies+cashZombies #merge the lists of zombies
+    ezZombies=None; cashZombies=None; #clear out variables...wont be needed
+    
+    tilemap.addMobs(zombies) #add zombies to the tilemap
     
     setWinningTile(tilemap,tileset)#place the winning tile!
 
@@ -328,10 +384,6 @@ def game(screen):
     
     #play the game for as long as this is true
     play=True
-    
-    #holder variables for action-affected tiles
-    pActTile=None
-    zActTile=None
     
     #begin game loop
     while play:
@@ -406,12 +458,14 @@ def game(screen):
             if(updateUI==WIN_STAT):
                 statWin = createStatWin(player)
             elif (updateUI==WIN_END):
-                endWin=createEndWin("You Win!","That only took " + str((pygame.time.get_ticks() - startTime)/1000/60) + " minutes!")
+                minutes= str((pygame.time.get_ticks() - startTime)/1000/60)
+                seconds=str(((pygame.time.get_ticks() - startTime)/1000) % 60)
+                endWin=createEndWin("You Win!","Time : " + minutes + " minutes, " + seconds + " seconds")
             
             
             #HANDLE ZOMBIES
             #work horse function for handling the zombies
-            updateUI=handleZombies(screen,tilemap,tileset,zombies,zActTile,player,fireSet)
+            updateUI=handleZombies(screen,tilemap,tileset,zombies,player,fireSet)
             
             #if any UI updates need to take place from handling the zombies, do them.
             if(updateUI==WIN_END):
