@@ -1,7 +1,7 @@
 #Filename: gameConstants.py
 #Author: Ryan Blakely
 #Last Modified By: Ryan Blakely
-#Last Modified: July 29th, 2013
+#Last Modified: July 30th, 2013
 #Description: Constants required for the ZombieMiner.py game
 
 #Revision History:

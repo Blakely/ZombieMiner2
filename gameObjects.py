@@ -1,11 +1,11 @@
 #Filename: gameObjects.py
 #Author: Ryan Blakely
 #Last Modified By: Ryan Blakely
-#Last Modified: July 15th, 2013
+#Last Modified: July 30th, 2013
 #Description: Objects required for the ZombieMiner.py game
 
 #Revision History
-# June 30th 2013
+# July 30th 2013
 #   - added updateframe to player
 #   - changed getPos to getDirtyPos and wrote a more accurate getPos
 #   - fixed bug in randomMapTemplate where it would break and not append an item, resulting in occasionally shorter rows
