@@ -193,20 +193,20 @@ ALIGN_BOTTOM=-2 #position value used for window-UI bottom-alignment
 
 #font file constants
 FONT_DIR = "fonts/"
-WIN_TITLE_FONT_FILE = FONT_DIR + "ButterflyKids.ttf"
+WIN_TITLE_FONT_FILE = FONT_DIR + "EuphoriaScript.ttf"
 WIN_FONT_FILE = FONT_DIR + "Ewert.ttf"
 
 #font constants for UI
-WIN_TITLE_FONT = 45
+WIN_TITLE_FONT = 50
 WIN_FONT_SIZE = 20
-WIN_FONT_SMALL_SIZE=18
+WIN_FONT_STAT_SIZE=18
 WIN_FONT_BTN_SIZE = 18
 WIN_FONT_COLOR = pygame.Color(130,100,80) #brownish
 
 #create fonts for the windows
 WIN_TITLE_FONT = pygame.font.Font(WIN_TITLE_FONT_FILE,WIN_TITLE_FONT)
 WIN_FONT = pygame.font.Font(WIN_FONT_FILE,WIN_FONT_SIZE)
-WIN_FONT_SMALL = pygame.font.Font(WIN_FONT_FILE,WIN_FONT_SMALL_SIZE)
+WIN_STAT_FONT = pygame.font.Font(WIN_FONT_FILE,WIN_FONT_STAT_SIZE); WIN_STAT_FONT.set_bold(True) #bold the small font
 BTN_FONT = pygame.font.Font(WIN_FONT_FILE,WIN_FONT_BTN_SIZE)
 
 #size of the panels for the windowset and button set images
@@ -232,9 +232,9 @@ SHOP_BTN_STR="shopStr" #id for buy str button
 SHOP_BTN_SP="shopSp" #id for buy sp button
 SHOP_BTN_VISION="shopVision" #id for buy vision button
 #label text for the shop items
-SHOP_LABELS=["Strength  $"+str(SHOP_COST_STR),
-             "Speed        $"+str(SHOP_COST_SP),
-             "Vision       $"+str(SHOP_COST_VISION)]
+SHOP_LABEL_TEXT=["Strength  $"+str(SHOP_COST_STR),
+                 "Speed        $"+str(SHOP_COST_SP),
+                 "Vision       $"+str(SHOP_COST_VISION)]
 
 #window titles
 MENU_TITLE = "Main Menu" #main menu title
