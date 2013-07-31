@@ -14,6 +14,11 @@
 #     ...this was the cause of the winningtile not working properly all the time
 #   - fixed bug where the base stats for the player wouldnt reset because the miner wasn't making a copy of the stats, but instead modifying them directly
 
+# July 31st 2013
+#   - added getButton & label to to Window
+#   - added disable/enable ability for buttons
+#   - for the disable button ability
+
 import pygame,math,random,re
 from pygame.locals import *
 
@@ -604,7 +609,7 @@ class AI(object):
     #intializes the AI
     def __init__(self,target):
         self.target=target
-    
+
     #based on the AI's own position in space as well as the players, and what 4 tiles are surrounding it, it will choose a direction to act towards
     #myPos (tuple) - the AI's position
     #nearTiles (list) - the 4 tiles surrounding the AI currently
@@ -621,7 +626,7 @@ class AI(object):
                 chkOrder = AI_CHECKORDER[DIR_RIGHT]
             elif(myPos[Y]<targetPos[Y]):
                 chkOrder = AI_CHECKORDER[DIR_DOWN]
-            elif(myPos[X]>targetPos[X]):
+            elif(myPos[X]>=targetPos[X]):
                 chkOrder = AI_CHECKORDER[DIR_LEFT]
             
             #check each surrounding in the "check order"
@@ -673,6 +678,7 @@ class Button(object):
     def __init__(self,name,pos,btnSet,textImg):
         self.pos = pos
         self.name = name
+        self.enabled = True
         
         #get required size of mid-section of button
         pnlSize=btnSet[0].get_size()
@@ -697,6 +703,25 @@ class Button(object):
         self.img.blit(textImg,textPos)
     # image done =========================================================
     
+    #enables the button - returning to the original img and setting the enabled flag
+    def enable(self):
+        #if the button has been disabled atelast once...
+        if (not self.enabled):
+            self.img=self.origImg.copy()
+            self.enabled=True
+            return True
+        
+        return False
+    
+    #disables the button - stores the original img for backup and lightens the buttons drawing img
+    def disable(self):
+        if(self.enabled):
+            self.origImg = self.img.copy()
+            self.enabled=False
+            changeBrightness(self.img,BTN_DARK_RGB)
+            return True
+        return False
+    
     #draws the button
     #screen (pygame Surface) - the screen to draw to
     #pos (tuple) - the position of the container on the screen
@@ -713,9 +738,10 @@ class Button(object):
     def click(self,mousePos,offsetPos):
         realPos=(self.pos[X]+offsetPos[X],self.pos[Y]+offsetPos[Y])
         
-        if (realPos[X]<mousePos[X] and realPos[X]+self.size[X]>mousePos[X]):
-            if (realPos[Y]<mousePos[Y] and realPos[Y]+self.size[Y]>mousePos[Y]):
-                return True
+        if (self.enabled):
+            if (realPos[X]<mousePos[X] and realPos[X]+self.size[X]>mousePos[X]):
+                if (realPos[Y]<mousePos[Y] and realPos[Y]+self.size[Y]>mousePos[Y]):
+                    return True
         return False
 
 #A simple UI label to display text
@@ -852,3 +878,10 @@ class Window(object):
                     return btn.name
         #false if nothing wasnt clicked
         return False
+    
+    def getButton(self,name):
+        for btn in self.btns:
+            if btn.name==name:
+                return btn
+        
+        return None

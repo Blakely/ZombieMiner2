@@ -46,6 +46,12 @@ Revision History:
 
  005  July 31st, 2013
       - slight gui changes - bolded stat font and changed the title font
+      - fixed slight bug where it wouldnt update the stat window if cash zombies hit him
+      - fixed bug where vision could still be bought at the store, even though there is no FOV
+      - can now "disable" buttons - disabling clicks and darkening the buttons image
+        ...added changeBrightness(img,factor) to gameFunctions and also added a few related constants
+      - fixed a bug where nearby cash zombies would freeze if one was touching me
+       ...the line returnWin = WIN_STAT fixed it, instead of instantly returning the window
 """
 
 #import needed modules for pygame
@@ -250,7 +256,7 @@ def setWinningTile(tilemap,tileset):
 
 
 #draws a "fading" vision circle around the player
-def drawVision(drawImg,tilemap,player):
+def drawVision(fowImg,tilemap,player):
     vision=(player.pos[X]+VISION_OFFSET[X],player.pos[Y]+VISION_OFFSET[Y],player.stats[STAT_RANGE])
     alpha=FADE_MAX_ALPHA
     steps=0 #no fading steps
@@ -262,7 +268,7 @@ def drawVision(drawImg,tilemap,player):
         if visionRadius<0:
             visionRadius=0
         
-        pygame.draw.circle(drawImg,Color(0,0,0,alpha),
+        pygame.draw.circle(fowImg,Color(0,0,0,alpha),
                            (vision[X]+tilemap.shift[X],
                             vision[Y]+tilemap.shift[Y]),
                            visionRadius)
@@ -335,6 +341,8 @@ def handlePlayer(screen,tilemap,tileset,player):
     return None
 
 def handleZombies(screen,tilemap,tileset,zombies,player,fireSet):
+    returnWin=None
+    
     #loop through each zombie to update
     for z in range(0,len(zombies)):
         zombie=zombies[z]
@@ -352,11 +360,12 @@ def handleZombies(screen,tilemap,tileset,zombies,player,fireSet):
         elif (zombie.pos == player.pos):
             #if its a killer zombie, end the game.
             if(zombie.stats[STAT_TYPE]==ZOMBIE_TYPE_KILL):
+                #return instantly and end the game
                 return WIN_END
             
             #if its a cash zombie, steal the players cash and bag
             elif(zombie.stats[STAT_TYPE]==ZOMBIE_TYPE_CASH):
-                player.money=0
+                player.stats[STAT_MONEY]=0
                 player.clearBag()
             
             #if its an easy zombie, steal the bag and send player
@@ -366,8 +375,8 @@ def handleZombies(screen,tilemap,tileset,zombies,player,fireSet):
                 player.clearBag()
                 tilemap.shift=(0,0)
             
-            #if the game didn't end, the stat window needs to be updated
-            return WIN_STAT
+            #if the game didn't end, the stat window needs to be updated, so set the return flag (FIXED)
+            returnWin = WIN_STAT
         
         #let the AI kick in to choose a direction,then try and act in that direction
         nearTiles=tilemap.getNearTiles(zombie.getPos()) #get tiles around zombie
@@ -391,7 +400,7 @@ def handleZombies(screen,tilemap,tileset,zombies,player,fireSet):
                 #set the dug-out tiles attributes and image to "dug" tile
                 zHitTile.change(mines[MINE_DUG],tileset[MINE_DUG])
                 
-    return None
+    return returnWin
 
 #main game loop - handles all game logic - runs until the user quits or returns to main menu
 # screen (pygame Surface) - the game screen!
@@ -435,6 +444,10 @@ def game(screen,fow=False,numEz=0,numCash=0,numKill=0):
     shopWin = SHOP_WIN  #setup the shop window
     statWin = createStatWin(player) #setup window for stats
     endWin = None #initialize the "end game" window - if this is set, the game is over
+    
+    #if fow is set, and the vision button exists (though why wouldnt it??), disable the button
+    if (not fow and shopWin.getButton(SHOP_BTN_VISION)):
+        shopWin.getButton(SHOP_BTN_VISION).disable()
     
     #set pygame to "repeat" key-presses (basically key toggling)
     pygame.key.set_repeat(50,50)
@@ -490,7 +503,8 @@ def game(screen,fow=False,numEz=0,numCash=0,numKill=0):
                     elif (clicked==SHOP_BTN_SP):
                         buyStat(player,STAT_SP,SHOP_COST_SP) #player bought sp
                     elif (clicked==SHOP_BTN_VISION):
-                         buyStat(player,STAT_VISION,SHOP_COST_VISION) #player bought vision
+                        print 'test'
+                        buyStat(player,STAT_VISION,SHOP_COST_VISION) #player bought vision
                     elif (clicked==MENU_BTN):
                         play=False #game is over (exits game loop) and player returned to main menu
                         break
@@ -509,6 +523,7 @@ def game(screen,fow=False,numEz=0,numCash=0,numKill=0):
             if(fow):
                 #aboveground is in the within the fog of war
                 drawFOW(screen,tilemap,player,[[0 , 0 , len(aboveground[0])*tilemap.tileSize[X] , len(aboveground)*tilemap.tileSize[Y]]])
+                
             
             #HANDLE PLAYER
             #work horse function for handling the player
@@ -517,7 +532,7 @@ def game(screen,fow=False,numEz=0,numCash=0,numKill=0):
             #if any UI updates need to take place from handling the player, do them
             if(updateUI==WIN_STAT):
                 statWin = createStatWin(player)
-            elif (updateUI==WIN_END):
+            if (updateUI==WIN_END):
                 minutes= str((pygame.time.get_ticks() - startTime)/1000/60)
                 seconds=str(((pygame.time.get_ticks() - startTime)/1000) % 60)
                 endWin=createEndWin("You Win!","Time : " + minutes + " minutes, " + seconds + " seconds")
@@ -528,7 +543,9 @@ def game(screen,fow=False,numEz=0,numCash=0,numKill=0):
             updateUI=handleZombies(screen,tilemap,tileset,zombies,player,fireSet)
             
             #if any UI updates need to take place from handling the zombies, do them.
-            if(updateUI==WIN_END):
+            if(updateUI==WIN_STAT):
+                statWin = createStatWin(player)
+            elif(updateUI==WIN_END):
                 endWin = createEndWin("Game Over","You have died!")
             
             
@@ -597,7 +614,7 @@ def menu(screen):
                         if (clicked==LVL_BTN_FREE):
                             game(screen,False,0,0,0) 
                         elif (clicked==LVL_BTN_EZ):
-                            game(screen,False,5,0,0) 
+                            game(screen,False,0,5,0) 
                         elif (clicked==LVL_BTN_MED):
                             game(screen,True,5,5,0) 
                         elif (clicked==LVL_BTN_HARD):

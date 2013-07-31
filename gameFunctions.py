@@ -1,7 +1,7 @@
 #Filename: gameFunctions.py
 #Author: Ryan Blakely
 #Last Modified By: Ryan Blakely
-#Last Modified: July 15th, 2013
+#Last Modified: July 31st, 2013
 #Description: Functions required for the ZombieMiner.py game
 
 
@@ -66,4 +66,21 @@ def specialPos(pos,bigSize,smallSize):
     elif (pos[Y]==ALIGN_BOTTOM):
         newPos = (newPos[X],bigSize[Y]-smallSize[Y])
         
-    return newPos; 
+    return newPos;
+
+#Generic pixel-by-pixel RGB changer for a Surface
+def changeBrightness(img,factor):
+    for y in range(img.get_height()):
+        for x in range(img.get_width()):
+            pixel = img.get_at((x,y))
+            if (pixel!=img.get_colorkey()):
+                rgb=[int(factor * pixel.r),int(factor * pixel.g),int(factor * pixel.b)]
+                
+                #make sure chosen rgb values are valid
+                for clr in range(0,len(rgb)):
+                    if rgb[clr] > MAX_RGB:
+                        rgb[clr]=MAX_RGB
+                    elif rgb[clr]<MIN_RGB:
+                        rgb[clr]=MIN_RGB
+                
+                img.set_at((x,y),(rgb[0],rgb[1],rgb[2]))

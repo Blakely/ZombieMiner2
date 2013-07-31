@@ -66,6 +66,17 @@ IMG_BTNSET=IMG_DIR+'buttonset2.png'
 IMG_WINSET=IMG_DIR+'winset.png'
 IMG_MENUBG=IMG_DIR+"menu.png"
 
+#fov/vision constants
+FADE_MAX_ALPHA=255
+FADE_MIN_ALPHA=0
+FADE_STEP_ALPHA=FADE_MAX_ALPHA/17
+FADE_STEP_DIST=3
+VISION_OFFSET=(15,15)
+
+#changing RBG constants
+BTN_DARK_RGB = 0.4
+MIN_RGB=0
+MAX_RGB=255
 
 #spriteset template (RL) for both player and zombiea
 SPRITE_SIZE = TILE_SIZE #currently, changing this might mess things up
@@ -95,13 +106,6 @@ BASE_RANGE = 30 #base vision range
 PLAYER_STATS = {STAT_SP:3,STAT_STR:8,STAT_MAXBAG:4,STAT_MONEY:0,STAT_VISION:1} #player initial stats
 PLAYER_CENTERPOS = (4,4) #players "center" position on the screen - FIX (dynamic?)
 PLAYER_STARTPOS = (1,4) #players starting position
-
-#fov/vision constants
-FADE_MAX_ALPHA=255
-FADE_MIN_ALPHA=0
-FADE_STEP_ALPHA=FADE_MAX_ALPHA/17
-FADE_STEP_DIST=2
-VISION_OFFSET=(15,15)
 
 #zombie constants
 ZOMBIE_NUM=15 #number of zombies
