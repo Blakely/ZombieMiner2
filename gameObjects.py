@@ -450,6 +450,7 @@ class Miner(Drawable):
                 return True
         return False     
     
+    #updates the image basedo n the current frame, act and direction of the miner
     def updateFrame(self):
         self.img = self.spriteset[self.act][self.dir][self.frame]
     
@@ -459,9 +460,13 @@ class Miner(Drawable):
         if(STAT_MAXBAG in self.stats.keys()):
             self.stats[STAT_MAXBAG]=self.stats[STAT_ORIGINAL_BAG] + self.stats[STAT_STR]
         
+        #calculates actual vision range based on vision stat
+        if(STAT_VISION in self.stats.keys()):
+            self.stats[STAT_RANGE] = self.stats[STAT_VISION]*self.size[X]+BASE_RANGE
+        
         #calculate frame/action delays based on speed
-        self.frameDelay = SPRITE_FRAME_DELAY / self.stats["sp"]
-        self.actDelay = SPRITE_ACT_DELAY / self.stats["sp"]
+        self.frameDelay = SPRITE_FRAME_DELAY / self.stats[STAT_SP]
+        self.actDelay = SPRITE_ACT_DELAY / self.stats[STAT_SP]
     
     #adds a value to a particular stat if it exists
     #stat (str) - the stat to add to

@@ -45,7 +45,7 @@ MAP_FILE_DLIM='\t'
 WIN_POS=(MAP_SIZE[X]-2,MAP_SIZE[Y]-2) #winning tile position
 
 #tile constants
-TILE_TRANSCOLOR = Color(255,0,255)
+TILE_TRANSCOLOR = Color(255,0,255,0)
 TILE_SIZE=(48,48)
 
 #return variables from the handler functions
@@ -85,12 +85,23 @@ STAT_MAXBAG='maxBag' #the current maximum bag size
 STAT_MONEY='money' #the players money 
 STAT_BAG = 'bag' #players current bag (list)
 STAT_ORIGINAL_BAG='origBag' #the original bag size assigned to the player at game runtime
+STAT_VISION='vision' #the stat for range of vision of the player
+STAT_RANGE='range' #actual range of vision fior the player (behind the scenes)
 STAT_TYPE='type' #mob stat for the type of mob
 
+BASE_RANGE = 30 #base vision range
+
 #player constants
-PLAYER_STATS = {STAT_SP:3,STAT_STR:8,STAT_MAXBAG:4,STAT_MONEY:0} #player initial stats
+PLAYER_STATS = {STAT_SP:3,STAT_STR:8,STAT_MAXBAG:4,STAT_MONEY:0,STAT_VISION:1} #player initial stats
 PLAYER_CENTERPOS = (4,4) #players "center" position on the screen - FIX (dynamic?)
 PLAYER_STARTPOS = (1,4) #players starting position
+
+#fov/vision constants
+FADE_MAX_ALPHA=255
+FADE_MIN_ALPHA=0
+FADE_STEP_ALPHA=FADE_MAX_ALPHA/17
+FADE_STEP_DIST=2
+VISION_OFFSET=(15,15)
 
 #zombie constants
 ZOMBIE_NUM=15 #number of zombies
@@ -188,9 +199,9 @@ WIN_FONT_FILE = FONT_DIR + "Ewert.ttf"
 #font constants for UI
 WIN_TITLE_FONT = 45
 WIN_FONT_SIZE = 20
-WIN_FONT_SMALL_SIZE=16
-WIN_FONT_BTN_SIZE = 20
-WIN_FONT_COLOR = pygame.Color(150,100,75) #brownish
+WIN_FONT_SMALL_SIZE=18
+WIN_FONT_BTN_SIZE = 18
+WIN_FONT_COLOR = pygame.Color(130,100,80) #brownish
 
 #create fonts for the windows
 WIN_TITLE_FONT = pygame.font.Font(WIN_TITLE_FONT_FILE,WIN_TITLE_FONT)
@@ -199,7 +210,7 @@ WIN_FONT_SMALL = pygame.font.Font(WIN_FONT_FILE,WIN_FONT_SMALL_SIZE)
 BTN_FONT = pygame.font.Font(WIN_FONT_FILE,WIN_FONT_BTN_SIZE)
 
 #size of the panels for the windowset and button set images
-WINSET_PNLSIZE=(350,20)
+WINSET_PNLSIZE=(438,25)
 BTNSET_PNLSIZE=(25,25)
 
 #window image sets ui order
@@ -214,18 +225,35 @@ BTNSET_IMG_MID=1
 
 #shop constants
 SHOP_COST_STR=20 #cost of str
-SHOP_COST_SP=20 #cost of sp
+SHOP_COST_SP=30 #cost of sp
+SHOP_COST_VISION=20
 SHOP_BTN_TEXT="Buy" #button text for shop buttons
-SHOP_TITLE="Ye Olde Shop" #title for the shop
 SHOP_BTN_STR="shopStr" #id for buy str button
 SHOP_BTN_SP="shopSp" #id for buy sp button
+SHOP_BTN_VISION="shopVision" #id for buy vision button
 #label text for the shop items
 SHOP_LABELS=["Strength  $"+str(SHOP_COST_STR),
-             "Speed     $"+str(SHOP_COST_SP)]
+             "Speed        $"+str(SHOP_COST_SP),
+             "Vision       $"+str(SHOP_COST_VISION)]
+
+#window titles
+MENU_TITLE = "Main Menu" #main menu title
+LVL_TITLE = "Difficulty" #level selection menu title
+SHOP_TITLE="Ye Olde Shop" #title for the shop
 
 #menu buttons - button id's and button text
 MENU_BTN_PLAY = "Play"
-MENU_BTN_HOW = "Instructions"
+MENU_BTN_HOW = "How To Play"
 MENU_BTN_EXIT = "Exit"
 MENU_BTN = "Return to Menu"
-MENU_TITLE = "Main Menu"
+
+#level selection buttons - buttons ids and text
+LVL_BTN_FREE="Free Play"
+LVL_BTN_EZ = "Easy"
+LVL_BTN_MED = "Medium"
+LVL_BTN_HARD = "Hard"
+
+
+#
+# DONT FORGET - THERE IS A FEW CONSTANTS AT THE TOP OF ZOMBIEMINER 
+#

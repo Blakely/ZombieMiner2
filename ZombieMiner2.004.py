@@ -9,7 +9,7 @@
 Revision History:
  001  July 29,2013
       - Original game 
-      - fov testing (drawFOV())
+      - fow testing (drawFOW())
       - handlePlayer/Zombies (moved code from game loop)
       - testing various zombie collision logic change (clearing bag, resetting player pos, etc)
       - added resetPlayer
@@ -32,9 +32,17 @@ Revision History:
         ... added a default tile param
       - fixed scrolling edge bug (not letting you go up and down at the right side)...just a matter of an X where there needed to be a Y
       - changed up the fonts size and styles...gui doesnt entirely line up anymore, but im going to save that for the next iteration
+      - fixed startTime to display minutes and seconds when games done
  
  004  July 30, 2013
-      -
+      - ...fixed dates. everything was june lol
+      - added a "fading vision" to the FOW drawing (drawVision)
+      - finished off FOW w/ player vision stat
+      - can now buy vision at shop
+      - MASSIVE gui changes. lots of moving/resizing of labels and buttons
+      - changed menu-to-game logic (game actually is started in menu now)
+      - implemented multiple levels of difficulty & menu for it
+      - implemented menu-to-menu logic (simple change menuWin)
 """
 
 #import needed modules for pygame
@@ -118,7 +126,7 @@ def scrollMap(screen,player,tilemap,moveVect):
     
     #if the player has reached an edge of the map on the y-axis, dont move the map in that direction anymore (FIXED)
     if (player.getPos()[Y]<PLAYER_CENTERPOS[Y]
-        or player.getPos()[Y]>tilemap.getSize()[Y]-PLAYER_CENTERPOS[Y]
+        or player.getPos()[Y]>tilemap.getSize()[Y]-PLAYER_CENTERPOS[Y]-1
         or player.getPos()[Y]==PLAYER_CENTERPOS[Y] and player.dir==DIR_DOWN):
         moveVect=(moveVect[X],0)
     
@@ -175,14 +183,14 @@ def buyStat(player,stat,cost):
 #returns - the statistics window
 def createStatWin(player):
     #ui elements for stats window
-    statLbls = [Label((80,0),"Strength: " + str(player.stats[STAT_STR]),WIN_FONT_SMALL,WIN_FONT_COLOR),
-                Label((80,18),"Speed  : " + str(player.stats[STAT_SP]),WIN_FONT_SMALL,WIN_FONT_COLOR),
-                Label((190,0), "Bag   : " + str(len(player.stats[STAT_BAG])) + "/" + str(player.stats[STAT_MAXBAG]),
+    statLbls = [Label((50,5),"Strength : " + str(player.stats[STAT_STR]),WIN_FONT_SMALL,WIN_FONT_COLOR),
+                Label((50,25),"Speed       : " + str(player.stats[STAT_SP]),WIN_FONT_SMALL,WIN_FONT_COLOR),
+                Label((230,5), "Bag    : " + str(len(player.stats[STAT_BAG])) + " / " + str(player.stats[STAT_MAXBAG]),
                       WIN_FONT_SMALL,WIN_FONT_COLOR),
-                Label((190,18),"Money : " + str(player.stats[STAT_MONEY]),WIN_FONT_SMALL,WIN_FONT_COLOR)]
+                Label((230,25),"Cash  : " + str(player.stats[STAT_MONEY]),WIN_FONT_SMALL,WIN_FONT_COLOR)]
     
     #create the stat window
-    statWin = Window((ALIGN_CENTER,ALIGN_BOTTOM),WINSET,1,None,statLbls)
+    statWin = Window((ALIGN_CENTER,ALIGN_BOTTOM),WINSET,0,None,statLbls)
     
     return statWin
 
@@ -190,24 +198,15 @@ def createStatWin(player):
 #returns - shop window
 def createShopWin():
     # ui elements for the shops items
-    shopLbls=[Label((60,35),SHOP_LABELS[0],WIN_FONT,WIN_FONT_COLOR),
-              Label((60,60),SHOP_LABELS[1],WIN_FONT,WIN_FONT_COLOR)]
-    shopBtns=[Button(SHOP_BTN_STR,(200,45),BTNSET,textImage(SHOP_BTN_TEXT,BTN_FONT,WIN_FONT_COLOR)),
-              Button(SHOP_BTN_SP,(200,70),BTNSET,textImage(SHOP_BTN_TEXT,BTN_FONT,WIN_FONT_COLOR))]
+    shopLbls=[Label((50,50),SHOP_LABELS[0],WIN_FONT,WIN_FONT_COLOR),
+              Label((50,80),SHOP_LABELS[1],WIN_FONT,WIN_FONT_COLOR),
+              Label((50,110),SHOP_LABELS[2],WIN_FONT,WIN_FONT_COLOR)]
+    shopBtns=[Button(SHOP_BTN_STR,(270,50),BTNSET,textImage(SHOP_BTN_TEXT,BTN_FONT,WIN_FONT_COLOR)),
+              Button(SHOP_BTN_SP,(270,80),BTNSET,textImage(SHOP_BTN_TEXT,BTN_FONT,WIN_FONT_COLOR)),
+              Button(SHOP_BTN_VISION,(270,110),BTNSET,textImage(SHOP_BTN_TEXT,BTN_FONT,WIN_FONT_COLOR))]
     
     #setup window for shopping    
     return Window((ALIGN_CENTER,5),WINSET,len(SHOP_LABELS),SHOP_TITLE,shopLbls,shopBtns)
-
-#creates the main menu window
-#returns - main menu window
-def createMenuWin():
-    # ui elements for the main menu buttons
-    menuBtns=[Button(MENU_BTN_PLAY,(ALIGN_CENTER,45),BTNSET,textImage(MENU_BTN_PLAY,BTN_FONT,WIN_FONT_COLOR)),
-              Button(MENU_BTN_HOW,(ALIGN_CENTER,70),BTNSET,textImage(MENU_BTN_HOW,BTN_FONT,WIN_FONT_COLOR)),
-              Button(MENU_BTN_EXIT,(ALIGN_CENTER,95),BTNSET,textImage(MENU_BTN_EXIT,BTN_FONT,WIN_FONT_COLOR))]
-    
-    #setup window for the main menu  
-    return Window((ALIGN_CENTER,ALIGN_CENTER),WINSET,len(menuBtns)+1,MENU_TITLE,None,menuBtns)
 
 #creates the end-game screen, win or lose
 #title (str) - the title for the window
@@ -215,36 +214,68 @@ def createMenuWin():
 #returns- the end game window
 def createEndWin(title, msg):
     # ui elements for the shops items
-    endLbls=[Label((ALIGN_CENTER,45),msg,WIN_FONT,WIN_FONT_COLOR)]
-    endBtns=[Button(MENU_BTN,(ALIGN_CENTER,80),BTNSET,textImage(MENU_BTN,BTN_FONT,WIN_FONT_COLOR))]
+    endLbls=[Label((ALIGN_CENTER,48),msg,WIN_FONT,WIN_FONT_COLOR)]
+    endBtns=[Button(MENU_BTN,(ALIGN_CENTER,82),BTNSET,textImage(MENU_BTN,BTN_FONT,WIN_FONT_COLOR))]
     
     #setup window for shopping    
-    return Window((ALIGN_CENTER,5),WINSET,len(endLbls)+len(endBtns)+1,title,endLbls,endBtns)
+    return Window((ALIGN_CENTER,ALIGN_CENTER),WINSET,len(endLbls)+len(endBtns),title,endLbls,endBtns)
 
-#sets a oartcular tile on the tilemap to be the winning tile
+#sets a particular tile on the tilemap to be the winning tile
 #tilemap (TileMap) - tilemap to place the mine on
+#tileset (TileSet) - the tileset to choose the mine from
 def setWinningTile(tilemap,tileset):
     tilemap.getTile(WIN_POS).change(mines[MINE_WIN],tileset[MINE_WIN])
 
-def drawFOV(screen,tilemap,player,transColor,clearings=None):
-    fovImg = pygame.Surface(screen.get_size())
-    fovImg.fill(Color(0,0,0))
-    pygame.draw.circle(fovImg,transColor,(player.pos[X]+tilemap.shift[X]+15,player.pos[Y]+tilemap.shift[Y]+15),80)
+
+#draws a "fading" vision circle around the player
+def drawVision(drawImg,tilemap,player):
+    vision=(player.pos[X]+VISION_OFFSET[X],player.pos[Y]+VISION_OFFSET[Y],player.stats[STAT_RANGE])
+    alpha=FADE_MAX_ALPHA
+    steps=0 #no fading steps
+
+    #loop through each fading step of the circle fade until its untirely faded (base circle, faded ring, more faded ring, etc until black)
+    while alpha>=FADE_MIN_ALPHA:
+        #determine the vision radius based on the players vision & current fade step
+        visionRadius=vision[R]-steps*FADE_STEP_DIST
+        if visionRadius<0:
+            visionRadius=0
+        
+        pygame.draw.circle(drawImg,Color(0,0,0,alpha),
+                           (vision[X]+tilemap.shift[X],
+                            vision[Y]+tilemap.shift[Y]),
+                           visionRadius)
+        
+        alpha-=FADE_STEP_ALPHA
+        steps+=1
+            
+    
+
+def drawFOW(screen,tilemap,player,clearings=None):
+    #create a new surface to paint the fow onto
+    fowImg = pygame.Surface(screen.get_size())
+    fowImg=fowImg.convert_alpha()
+    fowImg.fill(Color(0,0,0,255))
+    
+    #draw the circle around the player - MUST be called before other clearings, as the fade messes with things
+    drawVision(fowImg,tilemap,player)
+    
+    #if theres any "clearings" (fow-clear areas), loop through the areas and clear them of FOW
     if(clearings):
         for area in clearings:
-            if (len(area)==3):
-                #draw a circle
-                pygame.draw.circle(fovImg,transColor,(area[X]+tilemap.shift[X],area[Y]+tilemap.shift[Y]),area[R])
-            if (len(area)==4):
-                #draw a rectangle
-                pygame.draw.rect(fovImg,transColor,(area[X]+tilemap.shift[X],area[Y]+tilemap.shift[Y],area[W],area[H]))
+            for area in clearings:
+                if (len(area)==3):
+                    #draw a circle
+                    pygame.draw.circle(fowImg,Color(0,0,0,0),(area[X]+tilemap.shift[X],area[Y]+tilemap.shift[Y]),area[R])
+                if (len(area)==4):
+                    #draw a rectangle
+                    pygame.draw.rect(fowImg,Color(0,0,0,0),(area[X]+tilemap.shift[X],area[Y]+tilemap.shift[Y],area[W],area[H]))
     
-    fovImg.set_colorkey(transColor)
-    screen.blit(fovImg,(0,0))
+    #draw the fow image to the screen
+    screen.blit(fowImg,(0,0))
 
 def resetPlayer(player):
     player.setPos(PLAYER_STARTPOS)
-    player.lastMod+= 1000
+    #player.lastMod+= 3000 #FIX?? delay after reset
     player.frame=0
     player.act=ACT_NONE
     player.stepDist=(0,0)
@@ -295,7 +326,7 @@ def handleZombies(screen,tilemap,tileset,zombies,player,fireSet):
                 break
             continue #go to next zombie!
         
-        #otherwise if the zombie is touching the player - game over!
+        #otherwise if the zombie is touching the player - perform special zombie action!
         elif (zombie.pos == player.pos):
             #if its a killer zombie, end the game.
             if(zombie.stats[STAT_TYPE]==ZOMBIE_TYPE_KILL):
@@ -342,7 +373,7 @@ def handleZombies(screen,tilemap,tileset,zombies,player,fireSet):
 
 #main game loop - handles all game logic - runs until the user quits or returns to main menu
 # screen (pygame Surface) - the game screen!
-def game(screen):
+def game(screen,fow=False,numEz=0,numCash=0,numKill=0):
     startTime = pygame.time.get_ticks()
     
     #setup and create the player
@@ -363,10 +394,11 @@ def game(screen):
     #create the TileMap for the game and create/add zombies
     tilemap=TileMap(template,tileset,TILE_SIZE,player,maskSet)
     
-    #create ez zombies and cash zombies
-    ezZombies=createZombies(IMG_ZOMBIE_EZ,ZOMBIE_EZ_NUM,ZOMBIE_EZ_STATS,tilemap,tileset,SPRITE_TEMPLATE,player,(1,len(aboveground)))
-    cashZombies=createZombies(IMG_ZOMBIE_CASH,ZOMBIE_CASH_NUM,ZOMBIE_CASH_STATS,tilemap,tileset,SPRITE_TEMPLATE,player,(1,len(aboveground)))
-    zombies=ezZombies+cashZombies #merge the lists of zombies
+    #create ez zombies, cash zombies, and kill zombies
+    ezZombies=createZombies(IMG_ZOMBIE_EZ,numEz,ZOMBIE_EZ_STATS,tilemap,tileset,SPRITE_TEMPLATE,player,(1,len(aboveground)))
+    cashZombies=createZombies(IMG_ZOMBIE_CASH,numCash,ZOMBIE_CASH_STATS,tilemap,tileset,SPRITE_TEMPLATE,player,(1,len(aboveground)))
+    killZombies=createZombies(IMG_ZOMBIE_KILL,numKill,ZOMBIE_KILL_STATS,tilemap,tileset,SPRITE_TEMPLATE,player,(1,len(aboveground)))
+    zombies=ezZombies+cashZombies + killZombies #merge the lists of zombies
     ezZombies=None; cashZombies=None; #clear out variables...wont be needed
     
     tilemap.addMobs(zombies) #add zombies to the tilemap
@@ -435,6 +467,8 @@ def game(screen):
                         buyStat(player,STAT_STR,SHOP_COST_STR) #player bought str
                     elif (clicked==SHOP_BTN_SP):
                         buyStat(player,STAT_SP,SHOP_COST_SP) #player bought sp
+                    elif (clicked==SHOP_BTN_VISION):
+                         buyStat(player,STAT_VISION,SHOP_COST_VISION) #player bought vision
                     elif (clicked==MENU_BTN):
                         play=False #game is over (exits game loop) and player returned to main menu
                         break
@@ -449,9 +483,10 @@ def game(screen):
         
         #if the game isn't over yet, run updates for players and zombies and draw any necessary windows
         if (not endWin):
-            #draw the "field of vision"
-            #drawFOV(screen,tilemap,player,Color(255,0,255),
-            #    [[0 , 0 , len(aboveground[0])*tilemap.tileSize[X] , len(aboveground)*tilemap.tileSize[Y] ]])
+            #draw the "fog of war" (or lackthereof) if its set as a game param
+            if(fow):
+                #aboveground is in the within the fog of war
+                drawFOW(screen,tilemap,player,[[0 , 0 , len(aboveground[0])*tilemap.tileSize[X] , len(aboveground)*tilemap.tileSize[Y]]])
             
             #HANDLE PLAYER
             #work horse function for handling the player
@@ -495,15 +530,38 @@ def game(screen):
 
         #update the display
         pygame.display.flip()
-  
+
+#creates the main menu window
+#returns - main menu window
+def createMenuWin():
+    # ui elements for the main menu buttons
+    menuBtns=[Button(MENU_BTN_PLAY,(ALIGN_CENTER,50),BTNSET,textImage(MENU_BTN_PLAY,BTN_FONT,WIN_FONT_COLOR)),
+              Button(MENU_BTN_HOW,(ALIGN_CENTER,80),BTNSET,textImage(MENU_BTN_HOW,BTN_FONT,WIN_FONT_COLOR)),
+              Button(MENU_BTN_EXIT,(ALIGN_CENTER,110),BTNSET,textImage(MENU_BTN_EXIT,BTN_FONT,WIN_FONT_COLOR))]
+    
+    #setup window for the main menu  
+    return Window((ALIGN_CENTER,ALIGN_CENTER),WINSET,len(menuBtns),MENU_TITLE,None,menuBtns)
+
+def createLevelWin():
+     # ui elements for the main menu buttons
+    lvlBtns=[Button(LVL_BTN_FREE,(ALIGN_CENTER,55),BTNSET,textImage(LVL_BTN_FREE,BTN_FONT,WIN_FONT_COLOR)),
+             Button(LVL_BTN_EZ,(ALIGN_CENTER,85),BTNSET,textImage(LVL_BTN_EZ,BTN_FONT,WIN_FONT_COLOR)),
+             Button(LVL_BTN_MED,(ALIGN_CENTER,115),BTNSET,textImage(LVL_BTN_MED,BTN_FONT,WIN_FONT_COLOR)),
+             Button(LVL_BTN_HARD,(ALIGN_CENTER,145),BTNSET,textImage(LVL_BTN_HARD,BTN_FONT,WIN_FONT_COLOR)),
+             Button(MENU_BTN,(ALIGN_CENTER,185),BTNSET,textImage(MENU_BTN,BTN_FONT,WIN_FONT_COLOR))]
+    
+    #setup window for the main menu  
+    return Window((ALIGN_CENTER,ALIGN_CENTER),WINSET,len(lvlBtns)+1,LVL_TITLE,None,lvlBtns)
+    
+    
 #creates, displays, and handles events for the main menu for the game
 #screen (pygame Surface) - the game screen to draw to
 def menu(screen):
     menuWin = createMenuWin() #creates the menu window
-    menu = True
     bgImg = loadImage(IMG_MENUBG) #menus background image
+    
     #keep showing the menu until the user decides to go elsewhere
-    while (menu):
+    while True:
         for event in pygame.event.get():
             #if users quits, exit the game
             if event.type == QUIT:
@@ -514,10 +572,14 @@ def menu(screen):
             elif event.type == MOUSEBUTTONDOWN:
                 clicked=menuWin.click(screen,event.pos)
                 if(clicked):
+                    #MISC Clicks- can occur on various windows -----------------------------
+                    if(clicked==MENU_BTN):
+                        menuWin= createMenuWin()
+                        
+                    #The "Main Menu" Clicks ------------------------------------------------
                     #if the "play" button was clicked, exit the main menu and start the game
                     if(clicked==MENU_BTN_PLAY):
-                        menu=False
-                        break
+                        menuWin= createLevelWin()
                         
                     #if the instructions button was clicked, show the instructions window
                     elif (clicked==MENU_BTN_HOW):
@@ -527,6 +589,23 @@ def menu(screen):
                     elif (clicked==MENU_BTN_EXIT):
                         pygame.quit()
                         sys.exit()
+                    
+                    #The "Level Menu" Clicks ------------------------------------------------
+                    #if free button was clicked, start "free" game
+                    else:
+                        #start game based on which difficulty buttonw as selected
+                        if (clicked==LVL_BTN_FREE):
+                            game(screen,False,0,0,0) 
+                        elif (clicked==LVL_BTN_EZ):
+                            game(screen,False,5,0,0) 
+                        elif (clicked==LVL_BTN_MED):
+                            game(screen,True,5,5,0) 
+                        elif (clicked==LVL_BTN_HARD):
+                            game(screen,False,5,5,5)
+                            
+                        #go back to main menu after game
+                        menuWin=createMenuWin()
+                    
         
         #draw the background image & menu window
         screen.blit(bgImg,(0,0))
@@ -545,7 +624,7 @@ def main():
         menu(gameScreen)
     
         #start the game (if "play" was clicked in menu)
-        game(gameScreen);
+        #game(gameScreen)
 
 #Start the program
 if __name__ == "__main__":
