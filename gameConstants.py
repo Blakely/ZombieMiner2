@@ -40,9 +40,11 @@ FOV_OFFSET=(15,15) #offset to center the FOV on the character
 
 #map constants
 MAP_SIZE=(15,15)
-MAP_FILE = "above.txt"
-MAP_FILE_DLIM='\t'
-WIN_POS=(MAP_SIZE[X]-2,MAP_SIZE[Y]-2) #winning tile position
+MAP_FILE = "above.txt" #name of the aboveground map file
+MAP_FILE_DLIM='\t' #file delimiter for aboveground map file
+WIN_POS_RAND=-1 #flag for a random winning position, within the bounds of the map
+WIN_POS=(WIN_POS_RAND,MAP_SIZE[Y]-2) #winning tile position
+
 
 #tile constants
 TILE_TRANSCOLOR = Color(255,0,255,0)
@@ -67,16 +69,18 @@ IMG_WINSET=IMG_DIR+'winset.png'
 IMG_MENUBG=IMG_DIR+"menu.png"
 
 #fov/vision constants
-FADE_MAX_ALPHA=255
-FADE_MIN_ALPHA=0
-FADE_STEP_ALPHA=FADE_MAX_ALPHA/17
-FADE_STEP_DIST=3
-VISION_OFFSET=(15,15)
+FADE_MAX_ALPHA=255 #maximum alpha color value
+FADE_MIN_ALPHA=0 #minumum alpha color value
+FADE_STEP_NUM=17 #number of fading steps
+FADE_STEP_ALPHA=FADE_MAX_ALPHA/FADE_STEP_NUM #amount of alpha to fade with each step
+FADE_STEP_DIST=3 #amount to move away from center for each fade-step
+VISION_OFFSET=(24,14) #random offset needed to center vision circle around the player
+BASE_RANGE = 30 #base vision range
 
 #changing RBG constants
-BTN_DARK_RGB = 0.4
-MIN_RGB=0
-MAX_RGB=255
+BTN_DISABLE_RGB = 0.6 #percent to darken disabled buttons
+MIN_RGB=0 #minimum r,g, or b values
+MAX_RGB=255 #maximum r,g or b values
 
 #spriteset template (RL) for both player and zombiea
 SPRITE_SIZE = TILE_SIZE #currently, changing this might mess things up
@@ -99,8 +103,6 @@ STAT_ORIGINAL_BAG='origBag' #the original bag size assigned to the player at gam
 STAT_VISION='vision' #the stat for range of vision of the player
 STAT_RANGE='range' #actual range of vision fior the player (behind the scenes)
 STAT_TYPE='type' #mob stat for the type of mob
-
-BASE_RANGE = 30 #base vision range
 
 #player constants
 PLAYER_STATS = {STAT_SP:3,STAT_STR:8,STAT_MAXBAG:4,STAT_MONEY:0,STAT_VISION:1} #player initial stats

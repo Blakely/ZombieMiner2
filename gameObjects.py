@@ -215,6 +215,8 @@ class TileMap(list):
                 #create a new tile and add it to the minemap
                 newTile  = Tile(mines[int(template[row][col])],newPos,newImg,tileMaskSet)
                 self[row].append(newTile)
+                
+        self.size=(len(self[0]),len(self))
     
     #clears a particular mob
     #mobIndex - the position in the mob array to clear out
@@ -718,7 +720,7 @@ class Button(object):
         if(self.enabled):
             self.origImg = self.img.copy()
             self.enabled=False
-            changeBrightness(self.img,BTN_DARK_RGB)
+            changeBrightness(self.img,BTN_DISABLE_RGB)
             return True
         return False
     
