@@ -38,10 +38,15 @@ ACT_DIG=2
 SCREEN_SIZE=(500,500)
 FLIPVAL="^"
 FOV_OFFSET=(15,15) #offset to center the FOV on the character
+DATA_DIR = "data/"
 
 #map constants
-MAP_FILE = "above.txt" #name of the aboveground map file
+MAP_FILE = DATA_DIR + "above.dat" #name of the aboveground map file
 MAP_FILE_DLIM='\t' #file delimiter for aboveground map file
+
+#constants for the best-times file (high scores)
+TIME_FILE=DATA_DIR + "times.dat"
+TIME_DLIM="="
 
 #tile constants
 TILE_TRANSCOLOR = Color(255,0,255,0)
@@ -117,7 +122,7 @@ ZOMBIE_EZ  = {ZOMBIE_TYPE:ZOMBIE_TYPE_EZ,  ZOMBIE_IMG: IMG_ZOMBIE_EZ ,
 ZOMBIE_MED = {ZOMBIE_TYPE:ZOMBIE_TYPE_MED, ZOMBIE_IMG: IMG_ZOMBIE_MED,
               ZOMBIE_STATS:{STAT_SP:0.012, STAT_STR:0.008}}
 ZOMBIE_HARD= {ZOMBIE_TYPE:ZOMBIE_TYPE_HARD,ZOMBIE_IMG: IMG_ZOMBIE_HARD,
-              ZOMBIE_STATS:{STAT_SP:0.02,  STAT_STR:0.01}}
+              ZOMBIE_STATS:{STAT_SP:0.05,  STAT_STR:0.01}}
 
 
 #game constants/option flags for various game levels/difficulties
@@ -135,28 +140,28 @@ WIN_POS_RAND='?' #flag for a random winning position, within the bounds of the m
 
 GAME_LVLS = {
                 #free play level options
-                GAME_LVL_FREE :{GAME_OPT_MAP_SIZE:(75,75),
-                                GAME_OPT_WIN_POS :(73,73), #last row, last col
+                GAME_LVL_FREE :{GAME_OPT_MAP_SIZE:(15,15),
+                                GAME_OPT_WIN_POS :(13,13), #last row, last col
                                 GAME_OPT_FOW     :False, #no fow
                                 GAME_OPT_ZOMBIES :[]}, #no zombies
                 #easy level options
-                GAME_LVL_EZ   :{GAME_OPT_MAP_SIZE:(100,100),
-                                GAME_OPT_WIN_POS :(98,98), #alst row, last col
+                GAME_LVL_EZ   :{GAME_OPT_MAP_SIZE:(50,50),
+                                GAME_OPT_WIN_POS :(48,48), #alst row, last col
                                 GAME_OPT_FOW     :False, #no fow
                                 GAME_OPT_ZOMBIES :[ #10 ez zombies
                                                      dict(ZOMBIE_EZ.items() +  [(GAME_OPT_ZOMBIE_NUM,10)])
                                                   ]},
                 #medium level options
-                GAME_LVL_MED  :{GAME_OPT_MAP_SIZE:(150,150),
-                                GAME_OPT_WIN_POS :(WIN_POS_RAND,148), #winning tile position (random, but on the last row!)
+                GAME_LVL_MED  :{GAME_OPT_MAP_SIZE:(75,75),
+                                GAME_OPT_WIN_POS :(WIN_POS_RAND,73), #winning tile position (random, but on the last row!)
                                 GAME_OPT_FOW     :False,  #fow
                                 GAME_OPT_ZOMBIES :[ #10 ez, and 10 medium zombies
                                                      dict(ZOMBIE_EZ.items() +  [(GAME_OPT_ZOMBIE_NUM,10)]),
                                                      dict(ZOMBIE_MED.items() + [(GAME_OPT_ZOMBIE_NUM,10)])
                                                   ]},
                 #hard level options
-                GAME_LVL_HARD :{GAME_OPT_MAP_SIZE:(200,200),
-                                GAME_OPT_WIN_POS :(WIN_POS_RAND,198), #winning tile position (random, but on the last row!)
+                GAME_LVL_HARD :{GAME_OPT_MAP_SIZE:(100,100),
+                                GAME_OPT_WIN_POS :(WIN_POS_RAND,98), #winning tile position (random, but on the last row!)
                                 GAME_OPT_FOW     :False,  #fow
                                 GAME_OPT_ZOMBIES :[ #15 ez, 10 medium, and 5 hard zombies
                                                      dict(ZOMBIE_EZ.items() +  [(GAME_OPT_ZOMBIE_NUM,15)]),
@@ -190,42 +195,43 @@ ATTR_HP='hp'
 ATTR_VAL='value'
 ATTR_CHANCE='chance'
 ATTR_TYPE='type'
+ATTR_NAME='name'
 
 #all of the available "mines" (tiles) in the game, and their associated properties
 mines={ #diggable tiles - first is blank, last is win, others are minable
-        MINE_BLANK: {ATTR_CHANCE:80, ATTR_VAL:0,           ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:5}, #"blank" tile
-        2:          {ATTR_CHANCE:22, ATTR_VAL:1,           ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:7},
-        3:          {ATTR_CHANCE:17, ATTR_VAL:2,           ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:9},
-        4:          {ATTR_CHANCE:15, ATTR_VAL:3,           ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:10},
-        5:          {ATTR_CHANCE:14, ATTR_VAL:4,           ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:13},
-        6:          {ATTR_CHANCE:12, ATTR_VAL:5,           ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:15},
-        7:          {ATTR_CHANCE:10, ATTR_VAL:6,           ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:20},
-        8:          {ATTR_CHANCE:9,  ATTR_VAL:7,           ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:22},
-        9:          {ATTR_CHANCE:8,  ATTR_VAL:8,           ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:25},
-        10:         {ATTR_CHANCE:7,  ATTR_VAL:9,           ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:30},
-        11:         {ATTR_CHANCE:6,  ATTR_VAL:10,          ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:32},
-        12:         {ATTR_CHANCE:5,  ATTR_VAL:11,          ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:35},
-        13:         {ATTR_CHANCE:4,  ATTR_VAL:12,          ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:48},
-        14:         {ATTR_CHANCE:3,  ATTR_VAL:13,          ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:55},
-        15:         {ATTR_CHANCE:2,  ATTR_VAL:14,          ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:65},
-        16:         {ATTR_CHANCE:1,  ATTR_VAL:15,          ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:75},
-        MINE_WIN:   {ATTR_CHANCE:0,  ATTR_VAL:MINE_VAL_WIN,ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:100}, #winning tile
+        MINE_BLANK: {ATTR_NAME:"Dirt",          ATTR_CHANCE:120, ATTR_VAL:0,           ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:5}, #"blank" tile
+        2:          {ATTR_NAME:"Coal",          ATTR_CHANCE:30,  ATTR_VAL:1,           ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:7},
+        3:          {ATTR_NAME:"Amber",         ATTR_CHANCE:26,  ATTR_VAL:2,           ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:9},
+        4:          {ATTR_NAME:"Onyx",          ATTR_CHANCE:24,  ATTR_VAL:3,           ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:10},
+        5:          {ATTR_NAME:"Moonstone",     ATTR_CHANCE:20,  ATTR_VAL:4,           ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:13},
+        6:          {ATTR_NAME:"Copper",        ATTR_CHANCE:16,  ATTR_VAL:5,           ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:15},
+        7:          {ATTR_NAME:"Topaz",         ATTR_CHANCE:12,  ATTR_VAL:6,           ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:20},
+        8:          {ATTR_NAME:"Silver",        ATTR_CHANCE:9,   ATTR_VAL:7,           ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:22},
+        9:          {ATTR_NAME:"Gold",          ATTR_CHANCE:8,   ATTR_VAL:8,           ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:25},
+        10:         {ATTR_NAME:"Quartz",        ATTR_CHANCE:7,   ATTR_VAL:9,           ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:30},
+        11:         {ATTR_NAME:"Sapphire",      ATTR_CHANCE:6,   ATTR_VAL:10,          ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:32},
+        12:         {ATTR_NAME:"Ruby",          ATTR_CHANCE:5,   ATTR_VAL:11,          ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:35},
+        13:         {ATTR_NAME:"Emerald",       ATTR_CHANCE:4,   ATTR_VAL:12,          ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:48},
+        14:         {ATTR_NAME:"Opal",          ATTR_CHANCE:3,   ATTR_VAL:13,          ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:55},
+        15:         {ATTR_NAME:"Aquamarine",    ATTR_CHANCE:2,   ATTR_VAL:14,          ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:65},
+        16:         {ATTR_NAME:"Amethyst",      ATTR_CHANCE:1,   ATTR_VAL:15,          ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:75},
+        MINE_WIN:   {ATTR_NAME:"Meth",          ATTR_CHANCE:0,   ATTR_VAL:MINE_VAL_WIN,ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:100}, #winning tile
         
         #misc tiles
-        MINE_ROCK:  {ATTR_CHANCE:18, ATTR_VAL:0,           ATTR_TYPE:MINE_BLOCK_FULL}, #rock
-        18:         {ATTR_CHANCE:0,  ATTR_VAL:0,           ATTR_TYPE:MINE_BLOCK_UP}, #outside tile
-        19:         {ATTR_CHANCE:0,  ATTR_VAL:0,           ATTR_TYPE:MINE_BLOCK_FULL}, #cave-outside (side)
-        20:         {ATTR_CHANCE:0,  ATTR_VAL:0,           ATTR_TYPE:MINE_BLOCK_FULL}, #cave-outside (bottom)
-        MINE_DUG:   {ATTR_CHANCE:0,  ATTR_VAL:0,           ATTR_TYPE:MINE_BLOCK_NONE}, #dug out tile
+        MINE_ROCK:  {ATTR_NAME:"Rock",          ATTR_CHANCE:25,  ATTR_VAL:0,           ATTR_TYPE:MINE_BLOCK_FULL}, #rock
+        18:         {ATTR_NAME:"Sky",           ATTR_CHANCE:0,   ATTR_VAL:0,           ATTR_TYPE:MINE_BLOCK_UP}, #outside tile
+        19:         {ATTR_NAME:"Ground",        ATTR_CHANCE:0,   ATTR_VAL:0,           ATTR_TYPE:MINE_BLOCK_FULL}, #cave-outside (side)
+        20:         {ATTR_NAME:"Wall",          ATTR_CHANCE:0,   ATTR_VAL:0,           ATTR_TYPE:MINE_BLOCK_FULL}, #cave-outside (bottom)
+        MINE_DUG:   {ATTR_NAME:"Blank",         ATTR_CHANCE:0,   ATTR_VAL:0,           ATTR_TYPE:MINE_BLOCK_NONE}, #dug out tile
             
-        #house tiles (roof x3, then floor x3)
-        22:         {ATTR_CHANCE:0,  ATTR_VAL:0,           ATTR_TYPE:MINE_BLOCK_UP},
-        23:         {ATTR_CHANCE:0,  ATTR_VAL:0,           ATTR_TYPE:MINE_BLOCK_UP},
-        24:         {ATTR_CHANCE:0,  ATTR_VAL:0,           ATTR_TYPE:MINE_BLOCK_UP},
+        #house/shop tiles (roof x3, then floor x3)
+        22:         {ATTR_NAME:"Shop1",         ATTR_CHANCE:0,   ATTR_VAL:0,           ATTR_TYPE:MINE_BLOCK_UP},
+        23:         {ATTR_NAME:"Shop2",         ATTR_CHANCE:0,   ATTR_VAL:0,           ATTR_TYPE:MINE_BLOCK_UP},
+        24:         {ATTR_NAME:"Shop3",         ATTR_CHANCE:0,   ATTR_VAL:0,           ATTR_TYPE:MINE_BLOCK_UP},
         
-        25:         {ATTR_CHANCE:0,  ATTR_VAL:0,           ATTR_TYPE:MINE_SHOP},
-        26:         {ATTR_CHANCE:0,  ATTR_VAL:0,           ATTR_TYPE:MINE_SHOP},
-        27:         {ATTR_CHANCE:0,  ATTR_VAL:0,           ATTR_TYPE:MINE_SHOP},               
+        25:         {ATTR_NAME:"Shop4",         ATTR_CHANCE:0,   ATTR_VAL:0,           ATTR_TYPE:MINE_SHOP},
+        26:         {ATTR_NAME:"Shop5",         ATTR_CHANCE:0,   ATTR_VAL:0,           ATTR_TYPE:MINE_SHOP},
+        27:         {ATTR_NAME:"Shop6",         ATTR_CHANCE:0,   ATTR_VAL:0,           ATTR_TYPE:MINE_SHOP},               
       }
 
 
@@ -257,16 +263,16 @@ WIN_BTN_FONT_FILE = FONT_DIR + "Ewert.ttf"
 
 #font constants for UI
 WIN_TITLE_FONT_SIZE = 50
-WIN_SUB_FONT_SIZE = 30
 WIN_FONT_SIZE = 23
+WIN_SHOP_FONT_SIZE = 20
 WIN_FONT_STAT_SIZE=18
 WIN_FONT_BTN_SIZE = 18
 WIN_FONT_COLOR = pygame.Color(90,70,55) #brownish
 
 #create fonts for the windows
 WIN_TITLE_FONT = pygame.font.Font(WIN_FONT_FILE,WIN_TITLE_FONT_SIZE)
-WIN_SUB_FONT = pygame.font.Font(WIN_FONT_FILE,WIN_SUB_FONT_SIZE)
 WIN_FONT = pygame.font.Font(WIN_FONT_FILE,WIN_FONT_SIZE) #general font (mainly insutrction screen)
+WIN_SHOP_FONT = pygame.font.Font(WIN_GAME_FONT_FILE,WIN_SHOP_FONT_SIZE)
 WIN_STAT_FONT = pygame.font.Font(WIN_GAME_FONT_FILE,WIN_FONT_STAT_SIZE); WIN_STAT_FONT.set_bold(True) #bold the stat font
 BTN_FONT = pygame.font.Font(WIN_BTN_FONT_FILE,WIN_FONT_BTN_SIZE)
 
@@ -296,13 +302,14 @@ SHOP_BTN_STR="shopStr" #id for buy str button
 SHOP_BTN_SP="shopSp" #id for buy sp button
 SHOP_BTN_VISION="shopVision" #id for buy vision button
 #label text for the shop items
-SHOP_LABEL_TEXT=["Strength  $"+str(SHOP_COST_STR),
-                 "Speed        $"+str(SHOP_COST_SP),
-                 "Vision       $"+str(SHOP_COST_VISION)]
+SHOP_LABEL_TEXT=["Strength   $"+str(SHOP_COST_STR),
+                 "Speed         $"+str(SHOP_COST_SP),
+                 "Vision        $"+str(SHOP_COST_VISION)]
 
 #window titles
 MENU_TITLE = "Main Menu" #main menu title
 MENU_LVL_TITLE = "Difficulty" #level selection menu title
+TIMES_TITLE = "Best Times"
 SHOP_TITLE="Ye Olde Shop" #title for the shop
 HOW_TITLE="Overview"
 HOW_MECH_TITLE = "Mechanics"
@@ -312,7 +319,8 @@ HOW_MINES_TITLE = "Minerals"
 
 #menu buttons - button id's and button text
 MENU_BTN_PLAY = "Play"
-MENU_BTN_HOW = "How To Play"
+MENU_BTN_HOW = "Instructions"
+MENU_BTN_TIMES = "Best Times"
 MENU_BTN_EXIT = "Exit"
 MENU_BTN = "Main Menu"
 
@@ -321,6 +329,69 @@ MENU_LVL_BTN_FREE=GAME_LVL_FREE
 MENU_LVL_BTN_EZ = GAME_LVL_EZ
 MENU_LVL_BTN_MED = GAME_LVL_MED
 MENU_LVL_BTN_HARD = GAME_LVL_HARD
+
+
+#How window's UI constants
+#how-window buttons - button id's and button text
+HOW_BTN_MECH = HOW_MECH_TITLE
+HOW_BTN_ZOMBIES = HOW_ZOMBIES_TITLE
+HOW_BTN_MINES = HOW_MINES_TITLE
+
+#how-minerals window constants
+HOW_MINES_ROW_HEIGHT=8
+HOW_MINES_COL_WIDTH=190
+
+#best times window constants
+TIMES_ROW_HEIGHT = 30
+
+
+#text for the main instructions window
+HOW_TXT =\
+"""
+You're just been robbed! A gang of zombies mugged
+you and made off with your stash of beloved meth.
+
+There's no way in hell you're going to part with
+that sweet, precious meth, so you decide to follow
+the zombies and track them back to a nearby cave.
+
+Your objective is to venture into the cave and 
+recover your stolen meth as fast as possible!
+
+...and probably best try to avoid those zombies, too!
+"""
+
+#text for the mechanics window
+HOW_MECH_TXT =\
+"""
+There is a small prospecting shop outside that will
+purchase any minerals you may come across while
+exploring and train you to navigate
+the cave more efficiently.
+
+From your understanding of modern day zombies, they
+should burst into flames once the sun touches them,
+so your best bet if you run into any zombies is to
+lead them out and into the sun.
+
+P.S. Use the arrow keys to move your character!
+"""
+
+#text for the zombies window
+HOW_ZOMBIES_EZ_TXT =\
+"""Green
+    - Slowest and weakest zombie
+    - Steals your bag
+    - Sends you back to the shop"""
+HOW_ZOMBIES_MED_TXT =\
+"""Yellow
+    - Faster and stronger zombie
+    - Steals your bag
+    - Steals all of your money"""
+HOW_ZOMBIES_HARD_TXT =\
+"""Black
+    - Fastest and strongest zombie
+    - Kills you...game over!"""
 
 
 #

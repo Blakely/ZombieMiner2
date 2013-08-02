@@ -87,7 +87,10 @@ def specialPos(pos,bigSize,smallSize):
         
     return newPos;
 
-#Generic pixel-by-pixel RGB changer for a Surface
+#Generic pixel-by-pixel RGB brightener (or shader) for a Surface
+#img (Surface) - the image to change the rgb values of
+#factor (float) - factor (0.1=10%,2=200%) to modify the rgb by
+#returns - N/A, modifies img directly
 def changeBrightness(img,factor):
     for y in range(img.get_height()):
         for x in range(img.get_width()):
@@ -103,3 +106,12 @@ def changeBrightness(img,factor):
                         rgb[clr]=MIN_RGB
                 
                 img.set_at((x,y),(rgb[0],rgb[1],rgb[2]))
+
+#Given a time in seconds, converts it into minutes and seconds
+#time (int) - time in seconds
+#returns - tuple (minutes,seconds)
+def humanTime(time):
+    minutes= str(time/1000/60)
+    seconds=str((time/1000) % 60)
+    
+    return (minutes,seconds)

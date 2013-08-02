@@ -25,6 +25,7 @@
 # Aug 2, 2013
 #   - made some changes to Window - no longer uses a drawPos, simply self.pos
 #   - made some changes to labels to handle multi-line text
+#   - more changes to window to allow it to accept a list of images (Drawables) to contain aswell
 
 import pygame,math,random,re
 from pygame.locals import *
@@ -736,12 +737,12 @@ class Button(object):
     
     #draws the button
     #screen (pygame Surface) - the screen to draw to
-    #pos (tuple) - the position of the container on the screen
+    #,offsetPos (tuple) - the position of the container on the screen
     #window (Window) - the window container, if any
-    def draw(self,screen,pos,window=None):
+    def draw(self,screen,offsetPos=(0,0),window=None):
         if (window): #if its contained in a window, check/fix for any UI alignments
             self.pos=specialPos(self.pos,window.size,self.size)
-        screen.blit(self.img,(self.pos[X]+pos[X],self.pos[Y]+pos[Y])) #draw the button
+        screen.blit(self.img,(self.pos[X]+offsetPos[X],self.pos[Y]+offsetPos[Y])) #draw the button
     
     #determines if this button was clicked
     #mousePos (tuple) the position of the mouse click
@@ -755,6 +756,7 @@ class Button(object):
                 if (realPos[Y]<mousePos[Y] and realPos[Y]+self.size[Y]>mousePos[Y]):
                     return True
         return False
+ 
 
 #A simple UI label to display text
 #pos (tuple) - the absolute position of the label in its container
@@ -800,13 +802,13 @@ class Label(object):
     
     #draws the label
     #screen (pygame Surface) - the screen to draw to
-    #pos (tuple) - the offset drawing position of its container (cant be passed with container)
+    #,offsetPos (tuple) - the offset drawing position of its container (cant be passed with container)
     #window (Window) - the window container itself
-    def draw(self,screen,pos,window=None):
+    def draw(self,screen,offsetPos=(0,0),window=None):
         #makes any necessary last-minute changes to the position for spcial UI-alignment if its within a window
         if (window):
             self.pos=specialPos(self.pos,window.size,self.size)
-        screen.blit(self.img,(self.pos[X]+pos[X],self.pos[Y]+pos[Y])) 
+        screen.blit(self.img,(self.pos[X]+offsetPos[X],self.pos[Y]+offsetPos[Y])) 
 
 #A UI "Window" (message box-style) that can be clicked
 #pos (tuple) - the position of the window in its container
@@ -815,21 +817,23 @@ class Label(object):
 #title (str) - the title for the window - appears in big at the top
 #labels (list) - list of Label objects to put in the window
 #btns (list) - list of Button objects to put in the window
+#imgs (list) - list of Drawable (image) objects to put in the window
 class Window(object):
     #initializes the window. mostly hskpg
-    def __init__(self,pos,winSet,numPanels,title=None,labels=None,btns=None):
+    def __init__(self,pos,winSet,numPanels,title=None,labels=None,btns=None,imgs=None):
         #HSKPG
         self.winSet=winSet
         self.pnlSize=self.winSet[0].get_size() #only works if all panels are the same size
         self.title=title
         self.labels=labels
         self.btns=btns
+        self.imgs=imgs
         self.pos=pos
         self.visible=True
         
         #create the panels for the window & get its overall size
         self.createPanels(numPanels)
-        self.size = (self.pnlSize[X],self.pnlSize[Y]*(numPanels + 2))
+        self.size = (self.pnlSize[X],self.pnlSize[Y]*(numPanels + 2)) #+2 to always inlude top and bottom
         
     #creates the necessary panels and appends them to a list (always top and bottom + 1 if theres a title + numPanels)
     #numPanels (int) - see above equation
@@ -874,6 +878,11 @@ class Window(object):
             if(self.btns):
                 for btn in self.btns:
                     btn.draw(screen,self.pos,self)
+                    
+            #draw all the images
+            if(self.imgs):
+                for img in self.imgs:
+                    img.draw(screen,self.pos)
     
     #determines if any buttons have been clicked in the window
     #screen (pygame Surface) - the screen being clicked on
@@ -883,8 +892,8 @@ class Window(object):
         #check for any centering the window may partake in
         winPos=specialPos(self.pos,screen.get_size(),(self.pnlSize[X],self.pnlSize[Y]*len(self.panels)))
         
-        #first, check to see if the windowi s visible before checking for clicks
-        if(self.visible):
+        #first, check to see if the window is visible and has buttons before checking for clicks
+        if(self.visible and self.btns):
             #loop through all tghe windows buttons to see if any were clicked
             for btn in self.btns:
                 if (btn.click(mousePos,winPos)): #if the button was clicked, return true
