@@ -55,8 +55,20 @@ Revision History:
        
 006  July 31st, 2013
       - changed setWinningTile to set handle a "random placement" flag. also setup appropriate constants
-      - TO DO: sounds, highscore (textbased), streamline levels/zombies, how-to, push-back ability for enemys?
+      
+006  Aug 1st, 2013
+      - added game options dict to game() instead of multi-variables
+      - massive changes in gameConstants for zombie stats and game options to streamline different level creation w/ different zombies
+       ..also some changes to how createZombies works (and how its called), and also the level-menu logic
+       ..also some changes to setWinningTile to accept a given tile position instead of using the constant
+      - added dmg stat to miners based on strength to better regulate hit dmg
+      
+006  Aug 2nd, 2013
+     - made some changes to Window - no longer uses a drawPos, simply self.pos
+     - made some changes to labels to handle multi-line text
+     - almoost done the first instruction window
 """
+
 
 #import needed modules for pygame
 import pygame, sys, random
@@ -78,38 +90,62 @@ WINSET = ImageSet(IMG_WINSET,WINSET_PNLSIZE,TILE_TRANSCOLOR)
 #button imageset for drawing buttons
 BTNSET=ImageSet(IMG_BTNSET,BTNSET_PNLSIZE,TILE_TRANSCOLOR)
 
+
 # ui elements for the shops items
-SHOP_LBLS=[Label((50,50),SHOP_LABEL_TEXT[0],WIN_FONT,WIN_FONT_COLOR),
-           Label((50,80),SHOP_LABEL_TEXT[1],WIN_FONT,WIN_FONT_COLOR),
-           Label((50,110),SHOP_LABEL_TEXT[2],WIN_FONT,WIN_FONT_COLOR)]
-SHOP_BTNS=[Button(SHOP_BTN_STR,(270,50),BTNSET,textImage(SHOP_BTN_TEXT,BTN_FONT,WIN_FONT_COLOR)),
-           Button(SHOP_BTN_SP,(270,80),BTNSET,textImage(SHOP_BTN_TEXT,BTN_FONT,WIN_FONT_COLOR)),
-           Button(SHOP_BTN_VISION,(270,110),BTNSET,textImage(SHOP_BTN_TEXT,BTN_FONT,WIN_FONT_COLOR))]
+SHOP_LBLS=[Label((50,50),   SHOP_LABEL_TEXT[0],WIN_FONT,WIN_FONT_COLOR),
+           Label((50,80),   SHOP_LABEL_TEXT[1],WIN_FONT,WIN_FONT_COLOR),
+           Label((50,110),  SHOP_LABEL_TEXT[2],WIN_FONT,WIN_FONT_COLOR)]
+SHOP_BTNS=[Button(SHOP_BTN_STR,     (270,50),   BTNSET,textImage(SHOP_BTN_TEXT,BTN_FONT,WIN_FONT_COLOR)),
+           Button(SHOP_BTN_SP,      (270,80),   BTNSET,textImage(SHOP_BTN_TEXT,BTN_FONT,WIN_FONT_COLOR)),
+           Button(SHOP_BTN_VISION,  (270,110),  BTNSET,textImage(SHOP_BTN_TEXT,BTN_FONT,WIN_FONT_COLOR))]
 #window for shopping in the game
 SHOP_WIN=Window((ALIGN_CENTER,5),WINSET,len(SHOP_LBLS),SHOP_TITLE,SHOP_LBLS,SHOP_BTNS)
 
+
 # ui elements for the main menu buttons
-MENU_BTNS=[Button(MENU_BTN_PLAY,(ALIGN_CENTER,50),BTNSET,textImage(MENU_BTN_PLAY,BTN_FONT,WIN_FONT_COLOR)),
-           Button(MENU_BTN_HOW,(ALIGN_CENTER,80),BTNSET,textImage(MENU_BTN_HOW,BTN_FONT,WIN_FONT_COLOR)),
-           Button(MENU_BTN_EXIT,(ALIGN_CENTER,110),BTNSET,textImage(MENU_BTN_EXIT,BTN_FONT,WIN_FONT_COLOR))]
+MENU_BTNS=[Button(MENU_BTN_PLAY,    (ALIGN_CENTER,50),  BTNSET,textImage(MENU_BTN_PLAY,BTN_FONT,WIN_FONT_COLOR)),
+           Button(MENU_BTN_HOW,     (ALIGN_CENTER,80),  BTNSET,textImage(MENU_BTN_HOW,BTN_FONT,WIN_FONT_COLOR)),
+           Button(MENU_BTN_EXIT,    (ALIGN_CENTER,110), BTNSET,textImage(MENU_BTN_EXIT,BTN_FONT,WIN_FONT_COLOR))]
 #window for the main menu  
 MENU_WIN=Window((ALIGN_CENTER,ALIGN_CENTER),WINSET,len(MENU_BTNS),MENU_TITLE,None,MENU_BTNS)
 
+
 # ui elements for the level select menu buttons
-LVL_BTNS=[Button(LVL_BTN_FREE,(ALIGN_CENTER,55),BTNSET,textImage(LVL_BTN_FREE,BTN_FONT,WIN_FONT_COLOR)),
-          Button(LVL_BTN_EZ,(ALIGN_CENTER,85),BTNSET,textImage(LVL_BTN_EZ,BTN_FONT,WIN_FONT_COLOR)),
-          Button(LVL_BTN_MED,(ALIGN_CENTER,115),BTNSET,textImage(LVL_BTN_MED,BTN_FONT,WIN_FONT_COLOR)),
-          Button(LVL_BTN_HARD,(ALIGN_CENTER,145),BTNSET,textImage(LVL_BTN_HARD,BTN_FONT,WIN_FONT_COLOR)),
-          Button(MENU_BTN,(ALIGN_CENTER,185),BTNSET,textImage(MENU_BTN,BTN_FONT,WIN_FONT_COLOR))]
+LVL_BTNS=[Button(MENU_LVL_BTN_FREE, (ALIGN_CENTER,55),  BTNSET,textImage(MENU_LVL_BTN_FREE,BTN_FONT,WIN_FONT_COLOR)),
+          Button(MENU_LVL_BTN_EZ,   (ALIGN_CENTER,85),  BTNSET,textImage(MENU_LVL_BTN_EZ,BTN_FONT,WIN_FONT_COLOR)),
+          Button(MENU_LVL_BTN_MED,  (ALIGN_CENTER,115), BTNSET,textImage(MENU_LVL_BTN_MED,BTN_FONT,WIN_FONT_COLOR)),
+          Button(MENU_LVL_BTN_HARD, (ALIGN_CENTER,145), BTNSET,textImage(MENU_LVL_BTN_HARD,BTN_FONT,WIN_FONT_COLOR)),
+          Button(MENU_BTN,          (ALIGN_CENTER,185), BTNSET,textImage(MENU_BTN,BTN_FONT,WIN_FONT_COLOR))]
 #window for level/difficulty select menu
-LVL_WIN = Window((ALIGN_CENTER,ALIGN_CENTER),WINSET,len(LVL_BTNS)+1,LVL_TITLE,None,LVL_BTNS)
+LVL_WIN = Window((ALIGN_CENTER,ALIGN_CENTER),WINSET,len(LVL_BTNS)+1,MENU_LVL_TITLE,None,LVL_BTNS)
 
-# ui elements for the instruct window
-HOW_LBLS=[Label((50,50),SHOP_LABEL_TEXT[0],WIN_FONT,WIN_FONT_COLOR)]
 
+# ui elements for the instruction windows
+HOW_LBLS=[Label((-1,-1),
+                """
+                   You're just been robbed! A gang of zombies mugged
+                   you and made off with your stash of beloved meth.
+                
+                   There's no way in hell you're going to part with
+                   that sweet, precious meth, so you decide to follow
+                   the zombies and track them back to a nearby cave.
+                
+                   Your objective is to venture into the cave and 
+                   recover your stolen meth as fast as possible!
+                
+                   ...and probably best try to avoid those zombies, too!
+                """,
+                WIN_FONT,WIN_FONT_COLOR,LBL_LINE_DLIM)]
+HOW_BTNS=[Button(MENU_BTN,          (ALIGN_CENTER,ALIGN_BOTTOM), BTNSET,textImage(MENU_BTN,BTN_FONT,WIN_FONT_COLOR))]
 #window for instructions
-HOW_WIN=Window((ALIGN_CENTER,ALIGN_CENTER),WINSET,len(HOW_LBLS)+5,SHOP_TITLE,SHOP_LBLS,SHOP_BTNS)
-
+HOW_WIN=Window((ALIGN_CENTER,ALIGN_CENTER),WINSET,len(HOW_LBLS[0].text.split(LBL_LINE_DLIM)),HOW_TITLE,HOW_LBLS,HOW_BTNS)
+print HOW_LBLS[0].img.get_size()
+#HOW_MECH_LBLS
+#HOW_MECH_WIN
+#HOW_ZOMBIES_LBLS
+#HOW_ZOMBIES_WIN
+#HOW_MINES_LBLS
+#HOW_MINES_WIN
                 
 #=========================================================================================
 #                     MAIN/GAME FUNCTIONS
@@ -179,27 +215,28 @@ def scrollMap(screen,player,tilemap,moveVect):
     tilemap.move((-moveVect[X],-moveVect[Y]),(0,0),screen.get_size())
 
 #creates the zombies!
+#zData (dict) - zombie data for the to-be-created zombies. contains img, stats, and number of zombies
 #tilemap (TileMap) - the tilemap to create the zombies on (only needed to replace tiles for zombie space)
 #tileset (ImageSet) - the tileset for the tilemap (again, only needed for replace tiles for zombie space)
 #spriteTemplate (3d list) - the sprite template for the zombies
 #player (Miner) - the player, AKA the zombies (ai's) target
 #startPos (tuple) - the start position on the tilemap to start allowing zombies (wont allow placement < startPos)
-def createZombies(img,num,stats,tilemap,tileset,spriteTemplate,target,startPos=(0,0)):
-    zombieImg=loadImage(img,TILE_TRANSCOLOR) #load spriteset image for zombies
+def createZombies(zData,tilemap,tileset,spriteTemplate,target,startPos=(0,0)):
+    zombieImg=loadImage(zData[ZOMBIE_IMG],TILE_TRANSCOLOR) #load spriteset image for zombies
     zombieAI = AI(target) #setup a simple AI that targets the player
     
     zombies=list() #holder list for zombies
     
     #create given # of zombies
-    for z in range(0,num):
+    for z in range(0,zData[GAME_OPT_ZOMBIE_NUM]):
         #randomly choose a position for the zombie to start -- goes to width -1 and height - 1, to account for border
         randomPos = (random.randint(startPos[X],tilemap.getSize()[X]-2),random.randint(startPos[Y],tilemap.getSize()[Y]-2))
         
-        zombieStats = dict(stats).copy() #make a copy of the stats soas not to effect other zombies
+        zombieStats = zData[ZOMBIE_STATS].copy() #make a copy of the stats soas not to effect other zombies
         
-        #mod base stats based on the random position - further down zombies will be harder/faster
-        zombieStats[STAT_SP]=stats[STAT_SP]*(randomPos[X]+randomPos[Y])/2
-        zombieStats[STAT_STR]=stats[STAT_STR]*(randomPos[X]+randomPos[Y])/2
+        #mod base stats based on the random position - further away zombies will be harder/faster
+        for stat in zombieStats.keys():
+            zombieStats[stat]=zombieStats[stat]*(randomPos[X]+randomPos[Y])/2
         
         #create a new zombie and add it to the list of zombies
         zombie = Mob(randomPos,SpriteSet(zombieImg,SPRITE_SIZE,spriteTemplate),zombieStats,zombieAI)
@@ -255,12 +292,12 @@ def createEndWin(title, msg):
 #sets a particular tile on the tilemap to be the winning tile
 #tilemap (TileMap) - tilemap to place the mine on
 #tileset (TileSet) - the tileset to choose the mine from
-def setWinningTile(tilemap,tileset):
-    (tileX,tileY)=WIN_POS
+def setWinningTile(pos,tilemap,tileset):
+    (tileX,tileY)=pos
     
-    if(WIN_POS[X]==WIN_POS_RAND):
+    if(pos[X]==WIN_POS_RAND):
         tileX=random.randint(1,tilemap.size[X]-1)
-    if(WIN_POS[Y]==WIN_POS_RAND):
+    if(pos[Y]==WIN_POS_RAND):
         tileY=random.randint(1,tilemap.size[Y]-1)
         
     tilemap.getTile((tileX,tileY)).change(mines[MINE_WIN],tileset[MINE_WIN])
@@ -334,7 +371,7 @@ def handlePlayer(screen,tilemap,tileset,player):
     # if the player is done hitting
     elif (playerAct==ACT_DIG):
         pHitTile = player.actTile
-        pHitResult = pHitTile.hit(player.stats[STAT_STR])
+        pHitResult = pHitTile.hit(STAT_DMG_BASE+player.stats[STAT_DMG])
 
         #if the hit returned a result (broke?)
         if(pHitResult!=None):
@@ -414,16 +451,15 @@ def handleZombies(screen,tilemap,tileset,zombies,player,fireSet):
 
 #main game loop - handles all game logic - runs until the user quits or returns to main menu
 # screen (pygame Surface) - the game screen!
-def game(screen,fow=False,numEz=0,numCash=0,numKill=0):
+def game(screen,options):
     startTime = pygame.time.get_ticks()
     
     #setup and create the player
     playerImg=loadImage(IMG_PLAYER,TILE_TRANSCOLOR) #load the spriteset image for the player (miner)
     player = Miner(PLAYER_STARTPOS,SpriteSet(playerImg,SPRITE_SIZE,SPRITE_TEMPLATE),PLAYER_STATS)
-    
-    
+
     #create the template for the mine map
-    template=randomMapTemplate(MAP_SIZE,mines,MINE_ROCK) #create random map template of mines
+    template=randomMapTemplate(options[GAME_OPT_MAP_SIZE],mines,MINE_ROCK) #create random map template of mines
     template.setBorder(MINE_ROCK) #set the border to be all unbreakable bricks
     aboveground=mapReader(MAP_FILE,MAP_FILE_DLIM) #load in custom map for aboveground
     template.setArea((0,0),aboveground) #combine random minemap with aboveground map @ top left corner
@@ -435,16 +471,13 @@ def game(screen,fow=False,numEz=0,numCash=0,numKill=0):
     #create the TileMap for the game and create/add zombies
     tilemap=TileMap(template,tileset,TILE_SIZE,player,maskSet)
     
-    #create ez zombies, cash zombies, and kill zombies
-    ezZombies=createZombies(IMG_ZOMBIE_EZ,numEz,ZOMBIE_EZ_STATS,tilemap,tileset,SPRITE_TEMPLATE,player,(1,len(aboveground)))
-    cashZombies=createZombies(IMG_ZOMBIE_CASH,numCash,ZOMBIE_CASH_STATS,tilemap,tileset,SPRITE_TEMPLATE,player,(1,len(aboveground)))
-    killZombies=createZombies(IMG_ZOMBIE_KILL,numKill,ZOMBIE_KILL_STATS,tilemap,tileset,SPRITE_TEMPLATE,player,(1,len(aboveground)))
-    zombies=ezZombies+cashZombies + killZombies #merge the lists of zombies
-    ezZombies=None; cashZombies=None; #clear out variables...wont be needed
-    
+    #create all the zombies for the level (type by type) & add them to the map
+    zombies=list()
+    for zData in options[GAME_OPT_ZOMBIES]:
+        zombies = zombies + createZombies(zData.copy(),tilemap,tileset,SPRITE_TEMPLATE,player,(1,len(aboveground))) #copy zombie data (zData) so it doesnt overwrite later plays
     tilemap.addMobs(zombies) #add zombies to the tilemap
     
-    setWinningTile(tilemap,tileset)#place the winning tile!
+    setWinningTile(options[GAME_OPT_WIN_POS],tilemap,tileset)#place the winning tile!
 
     #setup the fire spriteset for any zombies that need to burn!
     fireImg=loadImage(IMG_FIRE,TILE_TRANSCOLOR)
@@ -456,7 +489,7 @@ def game(screen,fow=False,numEz=0,numCash=0,numKill=0):
     endWin = None #initialize the "end game" window - if this is set, the game is over
     
     #if fow is set, and the vision button exists (though why wouldnt it??), disable the button
-    if (not fow and shopWin.getButton(SHOP_BTN_VISION)):
+    if (not options[GAME_OPT_FOW] and shopWin.getButton(SHOP_BTN_VISION)):
         shopWin.getButton(SHOP_BTN_VISION).disable()
     
     #set pygame to "repeat" key-presses (basically key toggling)
@@ -527,10 +560,10 @@ def game(screen,fow=False,numEz=0,numCash=0,numKill=0):
         screen.fill(Color(0,0,0))
         tilemap.draw(screen)
         
-        #if the game isn't over yet, run updates for players and zombies and draw any necessary windows
+        #if the game isn't over yet, run updates for players and zombies and draw any necessary windows/fow
         if (not endWin):
-            #draw the "fog of war" (or lackthereof) if its set as a game param
-            if(fow):
+            #draw the "fog of war" (or lackthereof) if its set as a game option
+            if (options[GAME_OPT_FOW]):
                 #aboveground is in the within the fog of war
                 drawFOW(screen,tilemap,player,[[0 , 0 , len(aboveground[0])*tilemap.tileSize[X] , len(aboveground)*tilemap.tileSize[Y]]])
                 
@@ -600,17 +633,18 @@ def menu(screen):
                 clicked=menuWin.click(screen,event.pos)
                 if(clicked):
                     #MISC Clicks- can occur on various windows -----------------------------
+                    #return to main menu button
                     if(clicked==MENU_BTN):
                         menuWin= MENU_WIN
                         
                     #The "Main Menu" Clicks ------------------------------------------------
                     #if the "play" button was clicked, exit the main menu and start the game
-                    if(clicked==MENU_BTN_PLAY):
+                    elif(clicked==MENU_BTN_PLAY):
                         menuWin= LVL_WIN
                         
                     #if the instructions button was clicked, show the instructions window
                     elif (clicked==MENU_BTN_HOW):
-                        print "Instructions!"
+                        menuWin=HOW_WIN
                     
                     #if the exit button was clicked, close the game
                     elif (clicked==MENU_BTN_EXIT):
@@ -618,22 +652,13 @@ def menu(screen):
                         sys.exit()
                     
                     #The "Level Menu" Clicks ------------------------------------------------
-                    #if free button was clicked, start "free" game
+                    #if a game-level button was clicked, start the game with the selected difficulty
                     else:
                         #start game based on which difficulty buttonw as selected
-                        if (clicked==LVL_BTN_FREE):
-                            game(screen,False,0,0,0) 
-                        elif (clicked==LVL_BTN_EZ):
-                            game(screen,False,0,5,0) 
-                        elif (clicked==LVL_BTN_MED):
-                            game(screen,True,5,5,0) 
-                        elif (clicked==LVL_BTN_HARD):
-                            game(screen,False,5,5,5)
-                            
-                        #go back to main menu after game
-                        menuWin=MENU_WIN
+                        if (clicked):
+                            game(screen,GAME_LVLS[clicked]) #btn name should has to match up with game difficulty name for this to work
+                        menuWin=MENU_WIN #go back to main menu after game
                     
-        
         #draw the background image & menu window
         screen.blit(bgImg,(0,0))
         menuWin.draw(screen)

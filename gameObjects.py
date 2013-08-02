@@ -19,6 +19,13 @@
 #   - added disable/enable ability for buttons
 #   - for the disable button ability
 
+# Aug 1, 2013
+#   - added dmg stat to miners based on strength to better regulate hit dmg
+
+# Aug 2, 2013
+#   - made some changes to Window - no longer uses a drawPos, simply self.pos
+#   - made some changes to labels to handle multi-line text
+
 import pygame,math,random,re
 from pygame.locals import *
 
@@ -461,7 +468,7 @@ class Miner(Drawable):
     def updateFrame(self):
         self.img = self.spriteset[self.act][self.dir][self.frame]
     
-    #updates all the players complex stats (e.g. max bag size, animation delays) based on the base stats (str, speed)
+    #updates all the players complex stats (e.g. max bag size, animation delays,dmg,vision range) based on the base stats (str, speed,vision)
     def updateStats(self):
         #calculate maximum bag size based on str
         if(STAT_MAXBAG in self.stats.keys()):
@@ -469,11 +476,14 @@ class Miner(Drawable):
         
         #calculates actual vision range based on vision stat
         if(STAT_VISION in self.stats.keys()):
-            self.stats[STAT_RANGE] = self.stats[STAT_VISION]*self.size[X]+BASE_RANGE
+            self.stats[STAT_RANGE] = (self.stats[STAT_VISION]/2)*(self.size[X]/2)+STAT_RANGE_BASE
+        
+        #calculate dmg based on strength
+        self.stats[STAT_DMG]=STAT_DMG_BASE + (self.stats[STAT_STR]/2)
         
         #calculate frame/action delays based on speed
-        self.frameDelay = SPRITE_FRAME_DELAY / self.stats[STAT_SP]
-        self.actDelay = SPRITE_ACT_DELAY / self.stats[STAT_SP]
+        self.frameDelay = SPRITE_FRAME_DELAY / (self.stats[STAT_SP]/2)
+        self.actDelay = SPRITE_ACT_DELAY / (self.stats[STAT_SP]/2)
     
     #adds a value to a particular stat if it exists
     #stat (str) - the stat to add to
@@ -754,16 +764,16 @@ class Button(object):
 #transColor - for text transparency...not currently used
 class Label(object):
     #initializes the label. mostly hskpg
-    def __init__(self,pos,text,font,color,transColor=None):
+    def __init__(self,pos,text,font,color,lineDlim=None):
         #HSKPG
         self.pos=pos
         self.color=color
         self.font=font
         self.text=text
-        self.transColor=transColor
+        self.lineDlim=lineDlim
         
         #creates a new label image from the given parameters
-        self.newImg(textImage(text,font,color,transColor))
+        self.newImg(textImage(text,font,color,lineDlim))
 
     #sets the labels images and gets its size
     #newImg (pygame Surface) - the new image for the label
@@ -785,7 +795,7 @@ class Label(object):
             self.color=color
         
         #create the img from the new text, and set the new img
-        self.newImg(textImage(self.text,self.font,self.color,self.transColor))
+        self.newImg(textImage(self.text,self.font,self.color,self.lineDlim))
     
     #draws the label
     #screen (pygame Surface) - the screen to draw to
@@ -794,7 +804,9 @@ class Label(object):
     def draw(self,screen,pos,window=None):
         #makes any necessary last-minute changes to the position for spcial UI-alignment if its within a window
         if (window):
+            print self.text
             self.pos=specialPos(self.pos,window.size,self.size)
+            print self.pos[X]+pos[X]
         screen.blit(self.img,(self.pos[X]+pos[X],self.pos[Y]+pos[Y])) 
 
 #A UI "Window" (message box-style) that can be clicked
@@ -842,27 +854,27 @@ class Window(object):
         #make sure window is visible before trying to draw it
         if (self.visible):
             #perform any special UI alignment necessary for drawing
-            drawPos=specialPos(self.pos,screen.get_size(),(self.pnlSize[X],self.pnlSize[Y]*len(self.panels)))
+            self.pos=specialPos(self.pos,screen.get_size(),(self.pnlSize[X],self.pnlSize[Y]*len(self.panels)))
     
             #draw each panel
             for p in range(0,len(self.panels)):
-                screen.blit(self.panels[p],(drawPos[X],drawPos[Y]+p*self.pnlSize[Y]))
+                screen.blit(self.panels[p],(self.pos[X],self.pos[Y]+p*self.pnlSize[Y]))
             
             #draw title if necessary
             if(self.title):
                 #centers the tile on the top two panels
-                titlePos = (self.pnlSize[X]/2.0 - self.title.get_width()/2.0 +drawPos[X],self.pnlSize[Y] - self.title.get_height()/2.0 + drawPos[Y])#force float divison
+                titlePos = (self.pnlSize[X]/2.0 - self.title.get_width()/2.0 +self.pos[X],self.pnlSize[Y] - self.title.get_height()/2.0 + self.pos[Y])#force float divison
                 screen.blit(self.title,titlePos)
             
             #draw all the labels
             if (self.labels):
                 for label in self.labels:
-                    label.draw(screen,drawPos,self)
+                    label.draw(screen,self.pos,self)
     
             #draw all the buttons
             if(self.btns):
                 for btn in self.btns:
-                    btn.draw(screen,drawPos,self)
+                    btn.draw(screen,self.pos,self)
     
     #determines if any buttons have been clicked in the window
     #screen (pygame Surface) - the screen being clicked on

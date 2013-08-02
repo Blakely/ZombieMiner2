@@ -36,12 +36,27 @@ def loadImage(imgFile,transColor=None):
 #color (Color) - color of text
 #transColor (Color) - for text transparency...not currently used
 #returns - the text as an image (pygame Surface)
-def textImage(text,font,color,transColor=None):
-    if(transColor): #if theres a transparency set (never used currently - looks like crap)
-        #create the text image from the font with the given transpaency colorkey
-        txtImg=font.render(text, 1, color, transColor)
-        txtImg.set_colorkey(transColor, RLEACCEL) #try to get rid of any remaining transparency color that may remain
-    else: #otherwise, render it with bit transparency
+def textImage(text,font,color,lineDlim=None):
+    if(lineDlim): #if there is a line delimter...
+        lines = str(text).split(lineDlim) # split up the line
+        imgWid=0 #the final images width
+        lineImgs=list() #create a list to store the line images
+        for line in lines: #loop through each line in the text
+            lineImgs.append(font.render(line, 1, color)) #render its image (using bit transparency) and add it to the img list
+            
+            #determine if this line is the largest so far, if so, store its size
+            print font.size(line)[X] 
+            if font.size(line)[X] > imgWid:
+                imgWid=font.size(line)[X]
+        
+        #create a surface to hold the master image, fill the surface and set its colorkey to the transparent color
+        txtImg=pygame.Surface((imgWid,len(lines)*font.get_linesize()),pygame.SRCALPHA)
+        
+        for i in range(0,len(lineImgs)): #loop through each line img and draw it to the master img
+            txtImg.blit(lineImgs[i],(-20,i*font.get_linesize()))
+        
+    else: #otherwise, if its not a multi-liner...
+        #render it with bit transparency
         txtImg=font.render(text, 1, color)
         
     return txtImg
