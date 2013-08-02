@@ -258,10 +258,10 @@ WIN_BTN_FONT_FILE = FONT_DIR + "Ewert.ttf"
 #font constants for UI
 WIN_TITLE_FONT_SIZE = 50
 WIN_SUB_FONT_SIZE = 30
-WIN_FONT_SIZE = 22
+WIN_FONT_SIZE = 23
 WIN_FONT_STAT_SIZE=18
 WIN_FONT_BTN_SIZE = 18
-WIN_FONT_COLOR = pygame.Color(130,100,80) #brownish
+WIN_FONT_COLOR = pygame.Color(90,70,55) #brownish
 
 #create fonts for the windows
 WIN_TITLE_FONT = pygame.font.Font(WIN_FONT_FILE,WIN_TITLE_FONT_SIZE)
@@ -314,7 +314,7 @@ HOW_MINES_TITLE = "Minerals"
 MENU_BTN_PLAY = "Play"
 MENU_BTN_HOW = "How To Play"
 MENU_BTN_EXIT = "Exit"
-MENU_BTN = "Return to Menu"
+MENU_BTN = "Main Menu"
 
 #level selection buttons - buttons ids and text
 MENU_LVL_BTN_FREE=GAME_LVL_FREE

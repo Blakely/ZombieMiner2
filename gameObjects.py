@@ -764,16 +764,17 @@ class Button(object):
 #transColor - for text transparency...not currently used
 class Label(object):
     #initializes the label. mostly hskpg
-    def __init__(self,pos,text,font,color,lineDlim=None):
+    def __init__(self,pos,text,font,color,lineDlim=None,lineCenter=False):
         #HSKPG
         self.pos=pos
         self.color=color
         self.font=font
         self.text=text
         self.lineDlim=lineDlim
+        self.lineCenter=lineCenter
         
         #creates a new label image from the given parameters
-        self.newImg(textImage(text,font,color,lineDlim))
+        self.newImg(textImage(text,font,color,lineDlim,lineCenter))
 
     #sets the labels images and gets its size
     #newImg (pygame Surface) - the new image for the label
@@ -795,7 +796,7 @@ class Label(object):
             self.color=color
         
         #create the img from the new text, and set the new img
-        self.newImg(textImage(self.text,self.font,self.color,self.lineDlim))
+        self.newImg(textImage(self.text,self.font,self.color,self.lineDlim,self.lineCenter))
     
     #draws the label
     #screen (pygame Surface) - the screen to draw to
@@ -804,9 +805,7 @@ class Label(object):
     def draw(self,screen,pos,window=None):
         #makes any necessary last-minute changes to the position for spcial UI-alignment if its within a window
         if (window):
-            print self.text
             self.pos=specialPos(self.pos,window.size,self.size)
-            print self.pos[X]+pos[X]
         screen.blit(self.img,(self.pos[X]+pos[X],self.pos[Y]+pos[Y])) 
 
 #A UI "Window" (message box-style) that can be clicked

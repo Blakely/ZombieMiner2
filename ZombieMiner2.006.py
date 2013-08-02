@@ -66,7 +66,8 @@ Revision History:
 006  Aug 2nd, 2013
      - made some changes to Window - no longer uses a drawPos, simply self.pos
      - made some changes to labels to handle multi-line text
-     - almoost done the first instruction window
+     ...this included major change to textImage in gameFunctions to handle multi-line text, since pygame doesnt natively support it
+     - first instruction window essentially complete. other windows should be easy with the above changes :D. done 006!
 """
 
 
@@ -119,26 +120,26 @@ LVL_BTNS=[Button(MENU_LVL_BTN_FREE, (ALIGN_CENTER,55),  BTNSET,textImage(MENU_LV
 #window for level/difficulty select menu
 LVL_WIN = Window((ALIGN_CENTER,ALIGN_CENTER),WINSET,len(LVL_BTNS)+1,MENU_LVL_TITLE,None,LVL_BTNS)
 
+HOW_TXT =\
+"""
+You're just been robbed! A gang of zombies mugged
+you and made off with your stash of beloved meth.
+
+There's no way in hell you're going to part with
+that sweet, precious meth, so you decide to follow
+the zombies and track them back to a nearby cave.
+
+Your objective is to venture into the cave and 
+recover your stolen meth as fast as possible!
+
+...and probably best try to avoid those zombies, too!
+"""
 
 # ui elements for the instruction windows
-HOW_LBLS=[Label((-1,-1),
-                """
-                   You're just been robbed! A gang of zombies mugged
-                   you and made off with your stash of beloved meth.
-                
-                   There's no way in hell you're going to part with
-                   that sweet, precious meth, so you decide to follow
-                   the zombies and track them back to a nearby cave.
-                
-                   Your objective is to venture into the cave and 
-                   recover your stolen meth as fast as possible!
-                
-                   ...and probably best try to avoid those zombies, too!
-                """,
-                WIN_FONT,WIN_FONT_COLOR,LBL_LINE_DLIM)]
-HOW_BTNS=[Button(MENU_BTN,          (ALIGN_CENTER,ALIGN_BOTTOM), BTNSET,textImage(MENU_BTN,BTN_FONT,WIN_FONT_COLOR))]
+HOW_LBLS=[Label((-1,-1),HOW_TXT,WIN_FONT,WIN_FONT_COLOR,LBL_LINE_DLIM,True)]
+HOW_BTNS=[Button(MENU_BTN,(200,ALIGN_BOTTOM),BTNSET,textImage(MENU_BTN,BTN_FONT,WIN_FONT_COLOR))]
 #window for instructions
-HOW_WIN=Window((ALIGN_CENTER,ALIGN_CENTER),WINSET,len(HOW_LBLS[0].text.split(LBL_LINE_DLIM)),HOW_TITLE,HOW_LBLS,HOW_BTNS)
+HOW_WIN=Window((ALIGN_CENTER,ALIGN_CENTER),WINSET,len(HOW_LBLS[0].text.split(LBL_LINE_DLIM))+1,HOW_TITLE,HOW_LBLS,HOW_BTNS)
 print HOW_LBLS[0].img.get_size()
 #HOW_MECH_LBLS
 #HOW_MECH_WIN

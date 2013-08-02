@@ -30,13 +30,14 @@ def loadImage(imgFile,transColor=None):
     
     return img
 
-#Creates an image from text
+#Creates an image from text - handles multi-line text since pygame doesnt natively support it
 #text (str) - text to convert to an image
 #font (pygame Font) - Font to be used in the image
 #color (Color) - color of text
-#transColor (Color) - for text transparency...not currently used
+#lineDlim (str) - line delimiter for the text if its multi-line
+#lineCenter (bool) - flag to determine whether or not to center multi-line text
 #returns - the text as an image (pygame Surface)
-def textImage(text,font,color,lineDlim=None):
+def textImage(text,font,color,lineDlim=None,lineCenter=False):
     if(lineDlim): #if there is a line delimter...
         lines = str(text).split(lineDlim) # split up the line
         imgWid=0 #the final images width
@@ -44,8 +45,7 @@ def textImage(text,font,color,lineDlim=None):
         for line in lines: #loop through each line in the text
             lineImgs.append(font.render(line, 1, color)) #render its image (using bit transparency) and add it to the img list
             
-            #determine if this line is the largest so far, if so, store its size
-            print font.size(line)[X] 
+            #determine if this line is the largest so far, if so, store its size 
             if font.size(line)[X] > imgWid:
                 imgWid=font.size(line)[X]
         
@@ -53,7 +53,11 @@ def textImage(text,font,color,lineDlim=None):
         txtImg=pygame.Surface((imgWid,len(lines)*font.get_linesize()),pygame.SRCALPHA)
         
         for i in range(0,len(lineImgs)): #loop through each line img and draw it to the master img
-            txtImg.blit(lineImgs[i],(-20,i*font.get_linesize()))
+            #center the text if it required
+            drawX=0
+            if lineCenter: drawX=(imgWid/2)-(lineImgs[i].get_size()[X]/2)
+            
+            txtImg.blit(lineImgs[i],(drawX,i*font.get_linesize()))
         
     else: #otherwise, if its not a multi-liner...
         #render it with bit transparency
