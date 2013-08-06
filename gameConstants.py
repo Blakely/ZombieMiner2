@@ -1,8 +1,8 @@
 #Filename: gameConstants.py
 #Author: Ryan Blakely
 #Last Modified By: Ryan Blakely
-#Last Modified: July 30th, 2013
-#Description: Constants required for the ZombieMiner.py game
+#Last Modified: Aug 5th, 2013
+#Description: Constants required for the ZombieMiner2.py game
 
 #Revision History:
 # July 29,13 - fixed constants to speed up game
@@ -12,6 +12,8 @@
 #            - added constants for tile(mine) attributes
 #            - added some new constants for fonts, changed up sizes and styles, etc.
 # Aug 1,13   - massive changes to zombie stats and game options to streamline different level creation w/ different zombies
+# Aug 2,13   - added constants for best times + a few other non-big ones
+# Aug 5,13   - changed a lot of the game constants to make the game more challenging/fun
 
 import pygame
 from pygame.locals import *
@@ -57,6 +59,15 @@ WIN_STAT = 0 #stat window needs to be updated
 WIN_END = 1 #end-game window needs to be updated
 
 
+#sound file locations
+SND_DIR='sounds/'
+SND_HIT=SND_DIR+'hit.wav'
+SND_BREAK=SND_DIR+'hit.wav'
+SND_MINE=SND_DIR+'hit.wav'
+SND_SHOP=SND_DIR+'hit.wav'
+SND_HIT=SND_DIR+'hit.wav'
+
+
 #image file locations
 IMG_DIR = 'images/'
 IMG_ZOMBIE_EZ=IMG_DIR+'zombie.png'
@@ -77,9 +88,9 @@ SPRITE_TEMPLATE=[[['0'],['^0']], #standing
                 [['4','5','6','7'],['^4','^5','^6','^7']]] #axing
 FIRE_TEMPLATE=[[['0','1','2','^1','3','^2','0','3','2']]] #uses a template/spriteset so it can have duplicates of frames 
 #sprite animation delay "bases"
-SPRITE_FRAME_DELAY = 50 #delay between frames
-SPRITE_ACT_DELAY = 50 #delay between acts
-SPRITE_MASK_DELAY = 200 #delay between mask ani frames
+SPRITE_FRAME_DELAY = 140 #delay between frames
+SPRITE_ACT_DELAY = 40 #delay between acts
+SPRITE_MASK_DELAY = 400 #delay between mask ani frames
 
 #miner statistic constants
 STAT_SP='sp' #miners speed
@@ -93,12 +104,14 @@ STAT_RANGE='range' #actual range of vision fior the player (behind the scenes)
 STAT_DMG='dmg' #actual damage stat for how much dmg the player does - works behind the scenes
 
 #base stat constants
-STAT_RANGE_BASE = 30 #base vision range
+STAT_RANGE_BASE = 50 #base vision range
+STAT_RANGE_MULTI=25
 STAT_DMG_BASE=1 #base dng
+STAT_SP_MULTI=15 #speed mulitplier for delay calculation
 
 
 #player constants
-PLAYER_STATS = {STAT_SP:3,STAT_STR:8,STAT_MAXBAG:4,STAT_MONEY:0,STAT_VISION:1} #player initial stats
+PLAYER_STATS = {STAT_SP:1,STAT_STR:1,STAT_MAXBAG:4,STAT_MONEY:0,STAT_VISION:1} #player initial stats
 PLAYER_CENTERPOS = (4,4) #players "center" position on the screen - FIX (dynamic?)
 PLAYER_STARTPOS = (1,4) #players starting position
 
@@ -117,12 +130,12 @@ ZOMBIE_IMG ="zImg" #img for mob
 ZOMBIE_STATS = "zStats"
 
 #dictionaries containing all info for different types of zombies
-ZOMBIE_EZ  = {ZOMBIE_TYPE:ZOMBIE_TYPE_EZ,  ZOMBIE_IMG: IMG_ZOMBIE_EZ ,
-              ZOMBIE_STATS:{STAT_SP:0.008, STAT_STR:0.005}}
-ZOMBIE_MED = {ZOMBIE_TYPE:ZOMBIE_TYPE_MED, ZOMBIE_IMG: IMG_ZOMBIE_MED,
-              ZOMBIE_STATS:{STAT_SP:0.012, STAT_STR:0.008}}
-ZOMBIE_HARD= {ZOMBIE_TYPE:ZOMBIE_TYPE_HARD,ZOMBIE_IMG: IMG_ZOMBIE_HARD,
-              ZOMBIE_STATS:{STAT_SP:0.05,  STAT_STR:0.01}}
+ZOMBIE_EZ  = {ZOMBIE_IMG: IMG_ZOMBIE_EZ ,
+              ZOMBIE_STATS:{ZOMBIE_TYPE:ZOMBIE_TYPE_EZ,STAT_SP:0.01, STAT_STR:0.05}}
+ZOMBIE_MED = {ZOMBIE_IMG: IMG_ZOMBIE_MED,
+              ZOMBIE_STATS:{ZOMBIE_TYPE:ZOMBIE_TYPE_MED,STAT_SP:0.02, STAT_STR:0.06}}
+ZOMBIE_HARD= {ZOMBIE_IMG: IMG_ZOMBIE_HARD,
+              ZOMBIE_STATS:{ZOMBIE_TYPE:ZOMBIE_TYPE_HARD,STAT_SP:0.03,  STAT_STR:0.06}}
 
 
 #game constants/option flags for various game levels/difficulties
@@ -140,29 +153,29 @@ WIN_POS_RAND='?' #flag for a random winning position, within the bounds of the m
 
 GAME_LVLS = {
                 #free play level options
-                GAME_LVL_FREE :{GAME_OPT_MAP_SIZE:(15,15),
-                                GAME_OPT_WIN_POS :(13,13), #last row, last col
+                GAME_LVL_FREE :{GAME_OPT_MAP_SIZE:(40,40),
+                                GAME_OPT_WIN_POS :(38,38), #last row, last col
                                 GAME_OPT_FOW     :False, #no fow
                                 GAME_OPT_ZOMBIES :[]}, #no zombies
                 #easy level options
-                GAME_LVL_EZ   :{GAME_OPT_MAP_SIZE:(50,50),
-                                GAME_OPT_WIN_POS :(48,48), #alst row, last col
+                GAME_LVL_EZ   :{GAME_OPT_MAP_SIZE:(40,40),
+                                GAME_OPT_WIN_POS :(38,38), #alst row, last col
                                 GAME_OPT_FOW     :False, #no fow
                                 GAME_OPT_ZOMBIES :[ #10 ez zombies
                                                      dict(ZOMBIE_EZ.items() +  [(GAME_OPT_ZOMBIE_NUM,10)])
                                                   ]},
                 #medium level options
-                GAME_LVL_MED  :{GAME_OPT_MAP_SIZE:(75,75),
-                                GAME_OPT_WIN_POS :(WIN_POS_RAND,73), #winning tile position (random, but on the last row!)
-                                GAME_OPT_FOW     :False,  #fow
+                GAME_LVL_MED  :{GAME_OPT_MAP_SIZE:(60,60),
+                                GAME_OPT_WIN_POS :(WIN_POS_RAND,58), #winning tile position (random, but on the last row!)
+                                GAME_OPT_FOW     :True,  #fow
                                 GAME_OPT_ZOMBIES :[ #10 ez, and 10 medium zombies
                                                      dict(ZOMBIE_EZ.items() +  [(GAME_OPT_ZOMBIE_NUM,10)]),
                                                      dict(ZOMBIE_MED.items() + [(GAME_OPT_ZOMBIE_NUM,10)])
                                                   ]},
                 #hard level options
-                GAME_LVL_HARD :{GAME_OPT_MAP_SIZE:(100,100),
-                                GAME_OPT_WIN_POS :(WIN_POS_RAND,98), #winning tile position (random, but on the last row!)
-                                GAME_OPT_FOW     :False,  #fow
+                GAME_LVL_HARD :{GAME_OPT_MAP_SIZE:(80,80),
+                                GAME_OPT_WIN_POS :(WIN_POS_RAND,78), #winning tile position (random, but on the last row!)
+                                GAME_OPT_FOW     :True,  #fow
                                 GAME_OPT_ZOMBIES :[ #15 ez, 10 medium, and 5 hard zombies
                                                      dict(ZOMBIE_EZ.items() +  [(GAME_OPT_ZOMBIE_NUM,15)]),
                                                      dict(ZOMBIE_MED.items() + [(GAME_OPT_ZOMBIE_NUM,10)]),
@@ -199,22 +212,22 @@ ATTR_NAME='name'
 
 #all of the available "mines" (tiles) in the game, and their associated properties
 mines={ #diggable tiles - first is blank, last is win, others are minable
-        MINE_BLANK: {ATTR_NAME:"Dirt",          ATTR_CHANCE:120, ATTR_VAL:0,           ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:5}, #"blank" tile
-        2:          {ATTR_NAME:"Coal",          ATTR_CHANCE:30,  ATTR_VAL:1,           ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:7},
-        3:          {ATTR_NAME:"Amber",         ATTR_CHANCE:26,  ATTR_VAL:2,           ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:9},
-        4:          {ATTR_NAME:"Onyx",          ATTR_CHANCE:24,  ATTR_VAL:3,           ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:10},
-        5:          {ATTR_NAME:"Moonstone",     ATTR_CHANCE:20,  ATTR_VAL:4,           ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:13},
-        6:          {ATTR_NAME:"Copper",        ATTR_CHANCE:16,  ATTR_VAL:5,           ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:15},
-        7:          {ATTR_NAME:"Topaz",         ATTR_CHANCE:12,  ATTR_VAL:6,           ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:20},
-        8:          {ATTR_NAME:"Silver",        ATTR_CHANCE:9,   ATTR_VAL:7,           ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:22},
-        9:          {ATTR_NAME:"Gold",          ATTR_CHANCE:8,   ATTR_VAL:8,           ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:25},
-        10:         {ATTR_NAME:"Quartz",        ATTR_CHANCE:7,   ATTR_VAL:9,           ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:30},
-        11:         {ATTR_NAME:"Sapphire",      ATTR_CHANCE:6,   ATTR_VAL:10,          ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:32},
-        12:         {ATTR_NAME:"Ruby",          ATTR_CHANCE:5,   ATTR_VAL:11,          ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:35},
-        13:         {ATTR_NAME:"Emerald",       ATTR_CHANCE:4,   ATTR_VAL:12,          ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:48},
-        14:         {ATTR_NAME:"Opal",          ATTR_CHANCE:3,   ATTR_VAL:13,          ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:55},
-        15:         {ATTR_NAME:"Aquamarine",    ATTR_CHANCE:2,   ATTR_VAL:14,          ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:65},
-        16:         {ATTR_NAME:"Amethyst",      ATTR_CHANCE:1,   ATTR_VAL:15,          ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:75},
+        MINE_BLANK: {ATTR_NAME:"Dirt",          ATTR_CHANCE:120, ATTR_VAL:0,           ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:4}, #"blank" tile
+        2:          {ATTR_NAME:"Coal",          ATTR_CHANCE:30,  ATTR_VAL:1,           ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:5},
+        3:          {ATTR_NAME:"Amber",         ATTR_CHANCE:26,  ATTR_VAL:2,           ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:6},
+        4:          {ATTR_NAME:"Onyx",          ATTR_CHANCE:24,  ATTR_VAL:3,           ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:8},
+        5:          {ATTR_NAME:"Moonstone",     ATTR_CHANCE:20,  ATTR_VAL:4,           ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:10},
+        6:          {ATTR_NAME:"Copper",        ATTR_CHANCE:16,  ATTR_VAL:5,           ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:12},
+        7:          {ATTR_NAME:"Topaz",         ATTR_CHANCE:12,  ATTR_VAL:6,           ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:14},
+        8:          {ATTR_NAME:"Silver",        ATTR_CHANCE:9,   ATTR_VAL:7,           ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:15},
+        9:          {ATTR_NAME:"Gold",          ATTR_CHANCE:8,   ATTR_VAL:8,           ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:18},
+        10:         {ATTR_NAME:"Quartz",        ATTR_CHANCE:7,   ATTR_VAL:9,           ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:20},
+        11:         {ATTR_NAME:"Sapphire",      ATTR_CHANCE:6,   ATTR_VAL:10,          ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:24},
+        12:         {ATTR_NAME:"Ruby",          ATTR_CHANCE:5,   ATTR_VAL:11,          ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:26},
+        13:         {ATTR_NAME:"Emerald",       ATTR_CHANCE:4,   ATTR_VAL:12,          ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:28},
+        14:         {ATTR_NAME:"Opal",          ATTR_CHANCE:3,   ATTR_VAL:13,          ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:30},
+        15:         {ATTR_NAME:"Aquamarine",    ATTR_CHANCE:2,   ATTR_VAL:14,          ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:35},
+        16:         {ATTR_NAME:"Amethyst",      ATTR_CHANCE:1,   ATTR_VAL:15,          ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:40},
         MINE_WIN:   {ATTR_NAME:"Meth",          ATTR_CHANCE:0,   ATTR_VAL:MINE_VAL_WIN,ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:100}, #winning tile
         
         #misc tiles

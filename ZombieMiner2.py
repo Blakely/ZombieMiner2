@@ -1,8 +1,9 @@
-#Filename: ZombieMiner.py
+#Filename: ZombieMiner2.py
 #Author: Ryan Blakely
 #Last Modified By: Ryan Blakely
-#Last Modified: July 30th, 2013 
+#Last Modified: Aug 5th 2013 
 #Description: A Simple mining game in which the player must collect mines and avoid zombies.
+#Version: 2.0!
 
 
 """
@@ -93,6 +94,9 @@ Revision History:
      
 008  Aug 5th, 2013
     - added some missing comments! also minor changes to tweak the games difficulty/fun-ness, mainly in Miners updateStats and to game constants
+    - added in some basic sounds (hitting, breaking, shopping) and also added necessary constants
+    - lots of final testing, some minor bug fixes, and more tinkering with the constants
+    - last minute fix...have to check for stat type before multuiplying zombie stats based on random pos
 """
 
 
@@ -100,9 +104,11 @@ Revision History:
 import pygame, sys, random
 from pygame.locals import *
 
-#initialize pygame
+#initialize pygame, fonts, and the sound mixer
 pygame.init()
 pygame.font.init()
+#pygame.mixer.pre_init(frequency=22050,size=-16,channels=4)
+pygame.mixer.init()
 
 #import constants, functions, and objects needed for the game
 from gameConstants import *
@@ -173,7 +179,6 @@ HOW_MECH_BTNS=[Button(HOW_BTN_ZOMBIES,  (47,ALIGN_BOTTOM),  BTNSET,textImage(HOW
 HOW_MECH_WIN=Window((ALIGN_CENTER,ALIGN_CENTER),
                     WINSET,len(HOW_MECH_LBLS[0].text.split(LBL_LINE_DLIM))+1,HOW_MECH_TITLE,HOW_MECH_LBLS,HOW_MECH_BTNS)
 
-    
 # ui elements for the zombies window
 HOW_ZOMBIE_IMGS= [Drawable((50,65),ImageSet(IMG_ZOMBIE_EZ,   SPRITE_SIZE,TILE_TRANSCOLOR)[0]),
                   Drawable((50,175),ImageSet(IMG_ZOMBIE_MED,  SPRITE_SIZE,TILE_TRANSCOLOR)[0]),
@@ -355,7 +360,8 @@ def createZombies(zData,tilemap,tileset,spriteTemplate,target,startPos=(0,0)):
         
         #mod base stats based on the random position - further away zombies will be harder/faster
         for stat in zombieStats.keys():
-            zombieStats[stat]=zombieStats[stat]*(randomPos[X]+randomPos[Y])/2
+            if(stat!=ZOMBIE_TYPE):
+                zombieStats[stat]=zombieStats[stat]*(randomPos[X]+randomPos[Y])/2
         
         #create a new zombie and add it to the list of zombies
         zombie = Mob(randomPos,SpriteSet(zombieImg,SPRITE_SIZE,spriteTemplate),zombieStats,zombieAI)
@@ -539,11 +545,16 @@ def handlePlayer(screen,tilemap,tileset,player):
         
     # if the player is done hitting
     elif (playerAct==ACT_DIG):
+        pygame.mixer.Sound('sounds/hit.wav').play() #play the hitting sound
+        
+        #hit the tile
         pHitTile = player.actTile
         pHitResult = pHitTile.hit(player.stats[STAT_DMG])
-
+        
         #if the hit returned a result (broke?)
         if(pHitResult!=None):
+            pygame.mixer.Sound('sounds/break.wav').play() #play the breaking sound
+            
             pHitTile.change(mines[MINE_DUG],tileset[MINE_DUG]) #set the dug-out tiles attributes and image to "dug" tile
             
             #if the player just broke the winning mine, show the winning game screen
@@ -551,8 +562,10 @@ def handlePlayer(screen,tilemap,tileset,player):
                 return WIN_END
                 
             else: #otherwise, if it was a normal tile...
-                player.addToBag(pHitResult) #add the tiles value to the players bag
-                return WIN_STAT #create a new stat window (basically an update, but i never wrote an update)
+                #try to add the tiles value to the players bag, if it was worth something...
+                if(player.addToBag(pHitResult)): 
+                    pygame.mixer.Sound('sounds/mineral.wav').play() #play money sounds!
+                    return WIN_STAT #create a new stat window (basically an update, but i never wrote an update)
     
     return None
 
@@ -647,7 +660,7 @@ def handleZombies(screen,tilemap,tileset,zombies,player,fireSet):
 #                     TOP-LEVEL FUNCTIONS
 #========================================================================================
 
-#main game loop - handles all game logic - runs until the user quits or returns to main menu
+#main game loop - handles all game logic and user input events and runs until the user quits or returns to main menu
 # screen (pygame Surface) - the game screen!
 # level - string representing the game level being played (to lookup options in the GAME_LVL's constant)
 def game(screen,level):
@@ -799,7 +812,10 @@ def game(screen,level):
             if(tilemap.getTile(player.getPos()).attributes['type']==MINE_SHOP):
                 player.addStat(STAT_MONEY,player.clearBag()) #exchange bag for moneys
                 statWin=createStatWin(player) #update the stat window
-                shopWin.visible=True
+                
+                if(not shopWin.visible):
+                    pygame.mixer.Sound('sounds/shop.wav').play(0) #play the shopping sound !
+                    shopWin.visible=True
             else: #otherwise....dont!
                 shopWin.visible=False
             
@@ -815,7 +831,7 @@ def game(screen,level):
         #update the display
         pygame.display.flip()
 
-#creates, displays, and handles events for the main menu for the game
+#creates, displays, and handles events for the main menu for the game, and also controls flow between the menu and the game
 # screen (pygame Surface) - the game screen to draw to
 def menu(screen):
     menuWin = MENU_WIN #creates the menu window

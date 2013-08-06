@@ -1,8 +1,8 @@
 #Filename: gameFunctions.py
 #Author: Ryan Blakely
 #Last Modified By: Ryan Blakely
-#Last Modified: July 31st, 2013
-#Description: Functions required for the ZombieMiner.py game
+#Last Modified: Aug 5th, 2013
+#Description: Functions required for the ZombieMiner2.py game
 
 
 import pygame
@@ -12,7 +12,8 @@ from gameConstants import *
 
 #initialize pygame
 pygame.init()
-#dirty fix to allow loading of images before main display kicks in
+
+#dirty fix to allow loading of images error-free before main display kicks in
 pygame.display.set_mode((1,1), pygame.NOFRAME)
 
 #Generic load image function - loads an image from a file and sets its colorkey if given

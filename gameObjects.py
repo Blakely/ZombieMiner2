@@ -1,8 +1,8 @@
 #Filename: gameObjects.py
 #Author: Ryan Blakely
 #Last Modified By: Ryan Blakely
-#Last Modified: July 30th, 2013
-#Description: Objects required for the ZombieMiner.py game
+#Last Modified: Aug 5th, 2013
+#Description: Objects required for the ZombieMiner2.py game
 
 #Revision History
 # July 30th 2013
@@ -26,6 +26,9 @@
 #   - made some changes to Window - no longer uses a drawPos, simply self.pos
 #   - made some changes to labels to handle multi-line text
 #   - more changes to window to allow it to accept a list of images (Drawables) to contain aswell
+
+# Aug 5, 2013
+#   - comments! also minor changes to tweak the games difficulty/fun-ness
 
 import pygame,math,random,re
 from pygame.locals import *
@@ -477,14 +480,19 @@ class Miner(Drawable):
         
         #calculates actual vision range based on vision stat
         if(STAT_VISION in self.stats.keys()):
-            self.stats[STAT_RANGE] = (self.stats[STAT_VISION]/2)*(self.size[X]/2)+STAT_RANGE_BASE
+            self.stats[STAT_RANGE] = self.stats[STAT_VISION]*STAT_RANGE_MULTI+STAT_RANGE_BASE
         
         #calculate dmg based on strength
-        self.stats[STAT_DMG]=STAT_DMG_BASE + (self.stats[STAT_STR]/2)
+        self.stats[STAT_DMG]=self.stats[STAT_STR]
         
         #calculate frame/action delays based on speed
-        self.frameDelay = SPRITE_FRAME_DELAY / (self.stats[STAT_SP]/2)
-        self.actDelay = SPRITE_ACT_DELAY / (self.stats[STAT_SP]/2)
+        self.frameDelay = SPRITE_FRAME_DELAY - ((self.stats[STAT_SP]-1)*STAT_SP_MULTI)
+        self.actDelay = SPRITE_ACT_DELAY - ((self.stats[STAT_SP]-1)*STAT_SP_MULTI)
+        
+        if (self.frameDelay<0):
+            self.frameDelay=0
+        if (self.actDelay<0):
+            self.actDelay=0
     
     #adds a value to a particular stat if it exists
     #stat (str) - the stat to add to
@@ -612,6 +620,8 @@ class Miner(Drawable):
     def getDirtyPos(self):
         return (self.pos[X]/self.spriteset.frameSize[X],self.pos[Y]/self.spriteset.frameSize[Y])
     
+    #set the positon of the miner based on a tile-based position
+    #pos (tuple) - tile based position
     def setPos(self,pos):
         absPos = (pos[X]*self.spriteset.frameSize[X],pos[Y]*self.spriteset.frameSize[Y])
         self.pos = absPos
@@ -651,10 +661,10 @@ class AI(object):
         return DIR_LEFT #default to trying to go left - doesn't matter, AI cant move
 
 #SEE MINER - A miner that has its own ai to control its actions
-#pos - the original position for the mob
-#spriteset - the imageset to be used for the mob
+#pos (tuple) - the original position for the mob
+#spriteset (ImageSet) - the imageset to be used for the mob
 #stats (dict) - various stats for the mob
-#target (Miner) - the target for the mobs AI
+#ai (AI) - the mobs ai controller
 class Mob(Miner):
     #intializes the Miner Mob
     def __init__(self,pos,spriteset,stats,ai):
@@ -717,6 +727,7 @@ class Button(object):
     # image done =========================================================
     
     #enables the button - returning to the original img and setting the enabled flag
+    #returns - true if it was disabled, false if it was already enabled
     def enable(self):
         #if the button has been disabled atelast once...
         if (not self.enabled):
@@ -727,6 +738,7 @@ class Button(object):
         return False
     
     #disables the button - stores the original img for backup and lightens the buttons drawing img
+    #returns - false if it was already disabled, true otherwise
     def disable(self):
         if(self.enabled):
             self.origImg = self.img.copy()
@@ -737,7 +749,7 @@ class Button(object):
     
     #draws the button
     #screen (pygame Surface) - the screen to draw to
-    #,offsetPos (tuple) - the position of the container on the screen
+    #offsetPos (tuple) - the position of the container on the screen
     #window (Window) - the window container, if any
     def draw(self,screen,offsetPos=(0,0),window=None):
         if (window): #if its contained in a window, check/fix for any UI alignments
@@ -802,7 +814,7 @@ class Label(object):
     
     #draws the label
     #screen (pygame Surface) - the screen to draw to
-    #,offsetPos (tuple) - the offset drawing position of its container (cant be passed with container)
+    #offsetPos (tuple) - the offset drawing position of its container (cant be passed with container)
     #window (Window) - the window container itself
     def draw(self,screen,offsetPos=(0,0),window=None):
         #makes any necessary last-minute changes to the position for spcial UI-alignment if its within a window
@@ -901,6 +913,9 @@ class Window(object):
         #false if nothing wasnt clicked
         return False
     
+    #gets a button by its name
+    #name (str) - the name of the button (e.g. button id)
+    #returns - the button, or None if there isn't one in this window named that
     def getButton(self,name):
         for btn in self.btns:
             if btn.name==name:
