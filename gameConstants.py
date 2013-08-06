@@ -77,7 +77,7 @@ IMG_PLAYER=IMG_DIR+'player.png'
 IMG_CRACKS=IMG_DIR+'cracks.png'
 IMG_TILESET=IMG_DIR+'mines.png'
 IMG_FIRE=IMG_DIR+'fire.png'
-IMG_BTNSET=IMG_DIR+'buttonset2.png'
+IMG_BTNSET=IMG_DIR+'buttonset.png'
 IMG_WINSET=IMG_DIR+'winset.png'
 IMG_MENUBG=IMG_DIR+"menu.png"
 
