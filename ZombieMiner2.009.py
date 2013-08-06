@@ -92,7 +92,7 @@ Revision History:
      - moved times.dat (best times file) and above.dat (aboveground map file) to data folder
      - all menu's now complete!
      
-008  Aug 5th, 2013
+009  Aug 5th, 2013
     - added some missing comments! also minor changes to tweak the games difficulty/fun-ness, mainly in Miners updateStats and to game constants
     - added in some basic sounds (hitting, breaking, shopping) added necessary constants
     - last minute fix...have to check for stat type before multuiplying zombie stats based on random pos
