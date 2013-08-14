@@ -96,6 +96,12 @@ Revision History:
     - added some missing comments! also minor changes to tweak the games difficulty/fun-ness, mainly in Miners updateStats and to game constants
     - added in some basic sounds (hitting, breaking, shopping) added necessary constants
     - last minute fix...have to check for stat type before multuiplying zombie stats based on random pos
+    
+010  Aug 10th, 2013
+    - serious changes to scrollMap...i dont know what i was even thinking before. function requires way less parameters and totally different logic
+      also had to make a small change in gameObjects to TileMap.move so self.shift isnt cumulatative
+    - planning to add a "ghost"-zombie that can move through diggable tiles. added to tryAction an "ignore tiles - just move" flag for the ghost
+    - made a tilemap.randomPos to generate random positions for the zombie creation, teleporting, and winning tile (done). in the midst of integrating it throughout - almost done!
 """
 
 
@@ -106,7 +112,6 @@ from pygame.locals import *
 #initialize pygame, fonts, and the sound mixer
 pygame.init()
 pygame.font.init()
-#pygame.mixer.pre_init(frequency=22050,size=-16,channels=4)
 pygame.mixer.init()
 
 #import constants, functions, and objects needed for the game
@@ -352,8 +357,8 @@ def createZombies(zData,tilemap,tileset,spriteTemplate,target,startPos=(0,0)):
     
     #create given # of zombies
     for z in range(0,zData[GAME_OPT_ZOMBIE_NUM]):
-        #randomly choose a position for the zombie to start -- goes to width -1 and height - 1, to account for border
-        randomPos = (random.randint(startPos[X],tilemap.getSize()[X]-2),random.randint(startPos[Y],tilemap.getSize()[Y]-2))
+        #randomly choose a position for the zombie to start at
+        randomPos = tilemap.randomPos(startPos)
         
         zombieStats = zData[ZOMBIE_STATS].copy() #make a copy of the stats soas not to effect other zombies
         
@@ -366,24 +371,31 @@ def createZombies(zData,tilemap,tileset,spriteTemplate,target,startPos=(0,0)):
         zombie = Mob(randomPos,SpriteSet(zombieImg,SPRITE_SIZE,spriteTemplate),zombieStats,zombieAI)
         zombies.append(zombie)
         
-        #change the tile to be a "broken" one at the randomly chosen position
+        #change the tile to be a "dug" one at the randomly chosen position
         tilemap.getTile(randomPos).change(mines[MINE_DUG],tileset[MINE_DUG])
     
     return zombies
+    
 
-
-#sets a particular tile on the tilemap to be the winning tile
+#sets a particular tile on the tilemap to be the winning tile.
+#NOTE!! ONLY EVER CALL THIS FUNCTION ONCE! otherwise redo tilemap.randomPos logic
 # pos (tuple) - the position to set the winning tile to
 # tilemap (TileMap) - tilemap to place the mine on
 # tileset (TileSet) - the tileset to choose the mine from
-def setWinningTile(pos,tilemap,tileset):
+# startPos (tuple) - the start position on the tilemap to start allowing zombies (wont allow placement < startPos), e.g. the aboveground area
+def setWinningTile(pos,tilemap,tileset,startPos=(0,0)):
     (tileX,tileY)=pos
     
+    #generate a random position incase its needed
+    randPos=tilemap.randomPos(startPos)
+    
+    #if either of the positions is set w/ the random position flag, randomize its position!
     if(pos[X]==WIN_POS_RAND):
-        tileX=random.randint(1,tilemap.size[X]-1)
+        tileX=randPos[X]
     if(pos[Y]==WIN_POS_RAND):
-        tileY=random.randint(1,tilemap.size[Y]-1)
+        tileY=randPos[Y]
         
+    #replace the tile with the winning tile
     tilemap.getTile((tileX,tileY)).change(mines[MINE_WIN],tileset[MINE_WIN])
 
 
@@ -396,8 +408,9 @@ def setWinningTile(pos,tilemap,tileset):
 #miner (Miner) - the acting miner
 #direction (int) - the direction being acted in
 #tilemap (TileMap) - the tilemap the action is taking place on
+#ignoreType (bool) - if true, we dont care what the next type of tile is - just always move
 #returns - the next tile in the specified direction from the miner on the tilemap, if it can be acted on. otherwise dont return anything
-def tryAction(screen,miner,direction,tilemap):
+def tryAction(screen,miner,direction,tilemap,ignoreType=False):
     #get the direction vector for the desired action
     if(direction==DIR_RIGHT):
         move=(1,0)
@@ -416,42 +429,36 @@ def tryAction(screen,miner,direction,tilemap):
        nextPos[Y]>=0 and nextPos[Y]<tilemap.getSize()[Y]):
         nextTile = tilemap.getTile(nextPos) #get the next tile in the chosen direction
         
-        #if new direction next tileis blocked...
-        if(nextTile.attributes['type']==MINE_BLOCK_FULL):
-            return None #can't walk in that direction
-        
-        #if new direction is up, but up is blocked...
-        elif (direction==DIR_UP and tilemap.getTile(nextPos).attributes['type']==MINE_BLOCK_UP):
-            return None #can't act in that direction
-        
-        #if the new direction is diggable
-        elif (nextTile.attributes['type']==MINE_DIGGABLE):
-            if(miner.doAction(ACT_DIG)): #dig it and return the tile being dug
-                return nextTile
-        
-        else: #if the new direction is free and the player is trying to move
+        #if we dont care what the next type of tile is, just move (for ghosts)
+        if (ignoreType):
             if(miner.doAction(ACT_WALK,(move[X]*tilemap.tileSize[X],move[Y]*tilemap.tileSize[Y]))):
                 return nextTile
+        else:
+            #if new direction next tileis blocked...
+            if(nextTile.attributes['type']==MINE_BLOCK_FULL):
+                return None #can't walk in that direction
+            
+            #if new direction is up, but up is blocked...
+            elif (direction==DIR_UP and tilemap.getTile(nextPos).attributes['type']==MINE_BLOCK_UP):
+                return None #can't act in that direction
+            
+            #if the new direction is diggable
+            elif (nextTile.attributes['type']==MINE_DIGGABLE):
+                if(miner.doAction(ACT_DIG)): #dig it and return the tile being dug
+                    return nextTile
+            
+            else: #if the new direction is free and the player is trying to move
+                if(miner.doAction(ACT_WALK,(move[X]*tilemap.tileSize[X],move[Y]*tilemap.tileSize[Y]))):
+                    return nextTile
 
-# scrolls the map if necessary based on the players position and movement vector
+# scrolls the map if necessary based on the players position
 # screen (pygame Surface) - screen to move the map on
 # player (Miner) - the player (needed for position)
 # tilemap (TileMap) - the tilemap to scroll
-# moveVect (tuple) - the scroll vector
-def scrollMap(screen,player,tilemap,moveVect):
-    #if the player has reached an edge of the map on the x-axis, dont move the map in that direction anymore
-    if (player.getPos()[X]<PLAYER_CENTERPOS[X]
-        or player.getPos()[X]>tilemap.getSize()[X]-PLAYER_CENTERPOS[X]-1
-        or player.getPos()[X]==PLAYER_CENTERPOS[X] and player.dir==DIR_RIGHT):
-        moveVect=(0,moveVect[Y])
-    
-    #if the player has reached an edge of the map on the y-axis, dont move the map in that direction anymore (FIXED)
-    if (player.getPos()[Y]<PLAYER_CENTERPOS[Y]
-        or player.getPos()[Y]>tilemap.getSize()[Y]-PLAYER_CENTERPOS[Y]-1
-        or player.getPos()[Y]==PLAYER_CENTERPOS[Y] and player.dir==DIR_DOWN):
-        moveVect=(moveVect[X],0)
-    
-    tilemap.move((-moveVect[X],-moveVect[Y]),(0,0),screen.get_size())
+def scrollMap(screen,player,tilemap):
+    #get absolute position to shift map to (account for starting offset), then shift the map
+    mapPos = ((PLAYER_CENTERPOS[X]*tilemap.tileSize[X]-player.pos[X]),(PLAYER_CENTERPOS[Y]*tilemap.tileSize[Y]-player.pos[Y])) 
+    tilemap.move(mapPos,(0,0),screen.get_size())
 
 
 #========================================================================================
@@ -573,16 +580,19 @@ def handlePlayer(screen,tilemap,tileset,player):
 #                     ZOMBIE-ONLY FUNCTIONS
 #========================================================================================
 
-#resets the player to his original state in the game (not stats though!)
-# player (Miner) - the player to reset
-def resetPlayer(player):
-    player.setPos(PLAYER_STARTPOS)
-    #player.lastMod+= 3000 #FIX?? delay after reset
-    player.frame=0
-    player.act=ACT_NONE
-    player.stepDist=(0,0)
-    player.actTile=None
-    player.updateFrame()
+#Teleports a miner (currently just the player) to a specified location on the map and cancels any actions
+# miner (Miner) - the miner to teleport
+# pos (tuple) - the position to teleport to
+def teleport(miner,pos):
+    #move the miner
+    miner.setPos(pos)
+    
+    #cancel any action
+    miner.frame=0
+    miner.act=ACT_NONE
+    miner.stepDist=(0,0)
+    miner.actTile=None
+    miner.updateFrame()
 
 #handles the zombie-updating part of the game loop. checks for any performs any zombie actions and processes the results
 # screen (display) - the screen being drawn to
@@ -590,9 +600,9 @@ def resetPlayer(player):
 # tileset (TileSet) - the tileset being used currently
 # zombies (list) - a list of all of the zombies to handle
 # player (Miner) - the player that the zombies are after
-# fireSet (SpriteSet...more like an ImageSet) - the spriteset for the fire that kills the zombies
+# deathSet (SpriteSet...more like an ImageSet) - the spriteset for the fire that kills the zombies (zombies death)
 #returns - None or a Window obj if the game was won or the players stats need updating
-def handleZombies(screen,tilemap,tileset,zombies,player,fireSet):
+def handleZombies(screen,tilemap,tileset,zombies,player,deathSet):
     returnWin=None
     
     #loop through each zombie to update
@@ -602,7 +612,7 @@ def handleZombies(screen,tilemap,tileset,zombies,player,fireSet):
         #if the zombie is outside...
         if (tilemap.getTile(zombie.getPos()).attributes['type']==MINE_BLOCK_UP):
             #dying animation. when the animation is complete, remove the zombie from the tilemap and the game
-            if(zombie.dying(fireSet,SPRITE_MASK_DELAY)):
+            if(zombie.dying(deathSet,SPRITE_MASK_DELAY)):
                 tilemap.clearMob(z)
                 zombies.remove(zombie)
                 break
@@ -610,22 +620,31 @@ def handleZombies(screen,tilemap,tileset,zombies,player,fireSet):
         
         #otherwise if the zombie is touching the player - perform special zombie action!
         elif (zombie.pos == player.pos):
-            #if its a hard killer zombie, end the game.
-            if(zombie.stats[ZOMBIE_TYPE]==ZOMBIE_TYPE_HARD):
+            #always steal thep layers bag
+            player.clearBag()
+            
+            #if its a extreme killer zombie (ghosts), end the game.
+            if(zombie.stats[ZOMBIE_TYPE]==ZOMBIE_TYPE_EXTREME):
                 #return instantly and end the game
                 return WIN_END
+            
+            #if its a hard zombie, steal their bag and send them to a random location
+            if(zombie.stats[ZOMBIE_TYPE]==ZOMBIE_TYPE_HARD):
+                #get random pos to teleport player to
+                randPos=tilemap.randomPos()
+                #teleport player to that pos & scroll map
+                teleport(player,randPos)
+                scrollMap(screen,player,tilemap) # center map on player
+                tilemap.getTile(randPos).change(mines[MINE_DUG],tileset[MINE_DUG]) #replace the tile in that pos with a "dug" tile
             
             #if its a mediun zombie, steal the players cash and bag
             elif(zombie.stats[ZOMBIE_TYPE]==ZOMBIE_TYPE_MED):
                 player.stats[STAT_MONEY]=0
-                player.clearBag()
             
             #if its an easy zombie, steal the bag and send player
             elif (zombie.stats[ZOMBIE_TYPE]==ZOMBIE_TYPE_EZ):
-                #basic zombie - clear the players bag and return him to home
-                resetPlayer(player)
-                player.clearBag()
-                tilemap.shift=(0,0)
+                teleport(player,PLAYER_STARTPOS) #teleport player
+                scrollMap(screen,player,tilemap) # scroll the map to center it on the player
             
             #if the game didn't end, the stat window needs to be updated, so set the return flag (FIXED)
             returnWin = WIN_STAT
@@ -635,7 +654,8 @@ def handleZombies(screen,tilemap,tileset,zombies,player,fireSet):
         newDir=zombie.runAI(nearTiles)#get ai to choose path based on nearby tiles
         
         #try to act in the direction chosen
-        zTryResult = tryAction(screen,zombie,newDir,tilemap)
+        #(will ignore the tile type and always move when doing direction checks if zombie type = extreme. AI handles avoiding blocked tiles)
+        zTryResult = tryAction(screen,zombie,newDir,tilemap,(zombie.stats[ZOMBIE_TYPE]==ZOMBIE_TYPE_EXTREME))
         if(zTryResult):
             zombie.actTile=zTryResult
                 
@@ -645,7 +665,7 @@ def handleZombies(screen,tilemap,tileset,zombies,player,fireSet):
         #if the zombie is hitting
         if (zombieAct==ACT_DIG):
             zHitTile = zombie.actTile #get the tile the zombie is trying to hit
-            zHitResult = zHitTile.hit(zombie.stats[STAT_STR])
+            zHitResult = zHitTile.hit(zombie.stats[STAT_STR]) #hit it
             
             #if the hit returned a result (broke?)
             if(zHitResult!=None):
@@ -688,7 +708,8 @@ def game(screen,level):
         zombies = zombies + createZombies(zData.copy(),tilemap,TILESET,SPRITE_TEMPLATE,player,(1,len(aboveground))) #copy zombie data (zData) so it doesnt overwrite later plays
     tilemap.addMobs(zombies) #add zombies to the tilemap
     
-    setWinningTile(options[GAME_OPT_WIN_POS],tilemap,TILESET)#place the winning tile!
+    #place the winning tile! never allow random placement in the aboveground y-area or before half the y size of the map (whichever comes last!)
+    setWinningTile(options[GAME_OPT_WIN_POS],tilemap,TILESET,(1,max(len(aboveground),tilemap.size/2)))
 
     #setup the fire spriteset for any zombies that need to burn!
     fireImg=loadImage(IMG_FIRE,TILE_TRANSCOLOR)

@@ -104,7 +104,7 @@ STAT_RANGE='range' #actual range of vision fior the player (behind the scenes)
 STAT_DMG='dmg' #actual damage stat for how much dmg the player does - works behind the scenes
 
 #base stat constants
-STAT_RANGE_BASE = 50 #base vision range
+STAT_RANGE_BASE = 60 #base vision range
 STAT_RANGE_MULTI=25
 STAT_DMG_BASE=1 #base dng
 STAT_SP_MULTI=15 #speed mulitplier for delay calculation
@@ -126,6 +126,7 @@ ZOMBIE_TYPE="zType" #mob stat for the type of mob
 ZOMBIE_TYPE_EZ='ez'
 ZOMBIE_TYPE_MED='med'
 ZOMBIE_TYPE_HARD='hard'
+ZOMBIE_TYPE_EXTREME='xtreme'
 ZOMBIE_IMG ="zImg" #img for mob
 ZOMBIE_STATS = "zStats"
 

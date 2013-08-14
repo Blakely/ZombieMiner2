@@ -258,7 +258,7 @@ class TileMap(list):
             if (self[-1][-1].pos[X]+self.shift[X]+self.tileSize[X]<=max[X] and shift[X]<0):
                 shift=(0,shift[Y])
                 
-        self.shift = (self.shift[X]+shift[X],self.shift[Y]+shift[Y])
+        self.shift = (shift[X],shift[Y])
     
     #draws the map, row by row, column by column. also draws the player and any mobs on the map
     #screen - the screen to draw to
@@ -298,22 +298,32 @@ class TileMap(list):
     def getAbsSize(self):
         return (len(self[0])*self.tileSize[X],len(self)*self.tileSize[Y])
     
-    #gets the tile-based size of the map
-    def getSize(self):
-        return (len(self[0]),len(self))
-    
     #gets the 4 surrounding tiles of a given pos
     #pos (tuple) - the position to get surrounding tiles from (tile based)
     #returns - list of surrounding tiles, or None if there was an error
     def getNearTiles(self,pos):
         #FIX - unknown bug here that i cant consistently reproduce (tries to access a tile that isnt on the map?).
-        #...just return null if it arises
+        #...just return null if it arises. works well enough
         try:
             #in order of R L U D
             return [self[pos[Y]][pos[X]+1],self[pos[Y]][pos[X]-1],self[pos[Y]-1][pos[X]],self[pos[Y]+1][pos[X]]]
         except IndexError:
             return None
-
+    
+    #gets a random position on the tilemap, starting from a given starting position (random pos > startPos)
+    # startPos (tuple) - the first position that random positions are allowed
+    #returns - the random pos
+    def randomPos(self,startPos=(0,0)):
+        randPos=(-1,-1) 
+        
+        #keep regenerating positions until its not less than the starting Position, its not the winning position, and the tile has a value (no aboveground, blocked or winning tile)
+        while(randPos[X]<startPos[X] and randPos[Y]<startPos[Y]
+              and randPos!=self.winPos
+              and self.getTile(randPos).attributes[ATTR_VAL]>0):
+            randPos=(random.randint(0,self.size[X]-1),random.randint(0,self.size[Y]-1))
+                     
+        return randPos
+        
 #A map template reader that reads a map template from an external file and puts it into a 2d list
 #mapFile (str) - name of the external map file (each row on a new line)
 #dlim (str) - the delimieter for the columns in the mapfile
@@ -625,6 +635,7 @@ class Miner(Drawable):
     def setPos(self,pos):
         absPos = (pos[X]*self.spriteset.frameSize[X],pos[Y]*self.spriteset.frameSize[Y])
         self.pos = absPos
+        
 
 #A very simple target-based AI
 #target (Miner) - the target of the AI
@@ -660,7 +671,7 @@ class AI(object):
             
         return DIR_LEFT #default to trying to go left - doesn't matter, AI cant move
 
-#SEE MINER - A miner that has its own ai to control its actions
+#SEE MINER - A (enemy) miner that has its own ai to control its actions
 #pos (tuple) - the original position for the mob
 #spriteset (ImageSet) - the imageset to be used for the mob
 #stats (dict) - various stats for the mob
