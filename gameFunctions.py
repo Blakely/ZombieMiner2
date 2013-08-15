@@ -116,3 +116,36 @@ def humanTime(time):
     seconds=str((time/1000) % 60)
     
     return (minutes,seconds)
+
+#loads/plays/swaps (with fading) different music files for the game
+# oldMusic (Sound) - the music currently playing
+# musicFile (str) - the new music file to load
+# vol (float) - the volume for the music to be played at
+# fadeTime (int) - the time alloted to fade in/out music (fading in takes 4 times as long as fading out)
+#returns - the music currently being played as of the end of this function
+def playMusic(oldMusic,newMusic,vol,fadeTime):
+    
+    #if there is music playing and its the same as the new music were trying to play
+    if(oldMusic and newMusic.get_raw() == oldMusic.get_raw()):
+        return oldMusic #just return the old music. no need to restart
+    
+    #if the newMusic is actually new and there is a song playing, fade it out
+    elif(oldMusic): 
+        oldMusic.fadeout(fadeTime)
+    
+    #fade in new music, play and return (takes 4 times as long to fade in as it does to fade out...to sound smooth!)
+    newMusic.play(0,0,fadeTime*MUSIC_FADEIN_FACTOR)
+    newMusic.set_volume(vol)
+    return newMusic
+    
+#plays a sound a single time and returns it. for sound fx
+# sndFile (str) - the sound file to load and play
+# volume (float) - the volume to play the sound at
+#returns - the sound
+def playSound(sndFile,volume=SND_VOL_LOUD):
+    snd=pygame.mixer.Sound(sndFile)
+    snd.set_volume(volume)
+    pygame.mixer.Sound(snd).play()
+    
+    return snd
+    

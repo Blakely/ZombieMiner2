@@ -242,20 +242,21 @@ class TileMap(list):
     
     #attempts to "move" the map (shift its position on the screen)
     #shift (tuple) - the amount to move
+    #overScroll (tuple) - the overscroll distance needed as a safety net for map edges to prevent minor clipping (basically the stepDist between tile-based positions)
     #min (tuple) - the minimum allowed absolute position for the top left corner
     #max (tuple) - the maximum allowed absolute position for the bottom right corner
-    def move(self,shift,min=None,max=None):
+    def move(self,shift,overScroll=(0,0),min=None,max=None):
         #adjusts shift vector based on bounds for shifting
         if (min): #minumum bound
-            if (self[0][0].pos[Y]+self.shift[Y]>=min[Y] and shift[Y]>0):
+            if (self[0][0].pos[Y]+self.shift[Y]>=min[Y] and shift[Y]>self.shift[Y]):
                 shift=(shift[X],0)
-            if (self[0][0].pos[X]+self.shift[X]>=min[X] and shift[X]>0):
+            if (self[0][0].pos[X]+self.shift[X]>=min[X] and shift[X]>self.shift[X]):
                 shift=(0,shift[Y])
         
         if (max): #maximum bound
-            if (self[-1][-1].pos[Y]+self.shift[Y]+self.tileSize[Y]<max[Y] and shift[Y]<0):
+            if (self[-1][-1].pos[Y]+self.shift[Y]+self.tileSize[Y]<=max[Y]+overScroll[Y] and shift[Y]<self.shift[Y]):
                 shift=(shift[X],-self.size[Y]*self.tileSize[Y]+max[Y])
-            if (self[-1][-1].pos[X]+self.shift[X]+self.tileSize[X]<max[X] and shift[X]<0):
+            if (self[-1][-1].pos[X]+self.shift[X]+self.tileSize[X]<=max[X]+overScroll[X] and shift[X]<self.shift[X]):
                 shift=(-self.size[X]*self.tileSize[X]+max[X],shift[Y])
                 
         self.shift = (shift[X],shift[Y])
@@ -317,8 +318,8 @@ class TileMap(list):
         randPos=(-1,-1) 
         
         #keep regenerating positions until its not less than the starting Position and the tile has a value (no aboveground, blocked or winning tile)
-        while(randPos[X]<startPos[X] and randPos[Y]<startPos[Y]
-              or self.getTile(randPos).attributes[ATTR_VAL]>0):
+        while(randPos[X]<startPos[X] or randPos[Y]<startPos[Y]
+              or not self.getTile(randPos).attributes[ATTR_VAL]>0):
             randPos=(random.randint(0,self.size[X]-1),random.randint(0,self.size[Y]-1))
                         
         return randPos

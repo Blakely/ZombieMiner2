@@ -41,10 +41,7 @@ SCREEN_SIZE=(500,500)
 FLIPVAL="^"
 FOV_OFFSET=(15,15) #offset to center the FOV on the character
 DATA_DIR = "data/"
-
-#map constants
-MAP_FILE = DATA_DIR + "above.dat" #name of the aboveground map file
-MAP_FILE_DLIM='\t' #file delimiter for aboveground map file
+SPLASH_DELAY=4000 #4 second delay on splash screen
 
 #constants for the best-times file (high scores)
 TIME_FILE=DATA_DIR + "times.dat"
@@ -63,9 +60,20 @@ WIN_END = 1 #end-game window needs to be updated
 SND_DIR='sounds/'
 SND_HIT=SND_DIR+'hit.wav'
 SND_BREAK=SND_DIR+'break.wav'
-SND_MINE=SND_DIR+'mine.wav'
+SND_MINE=SND_DIR+'mineral.wav'
 SND_SHOP=SND_DIR+'shop.wav'
+SND_ZOMBIE=SND_DIR+'zombie.wav'
+SND_GAMEOVER=SND_DIR+'evillaugh.wav'
+SND_WINNING=SND_DIR+'winning.wav'
+MUSIC_OUTSIDE=SND_DIR+'outsideMusic.wav'
+MUSIC_MINE=SND_DIR+'mineMusic.wav'
 
+#other sound/music constants
+SND_VOL_LOUD=1
+SND_VOL_QUIET=0.5
+MUSIC_VOL=0.2
+MUSIC_FADETIME=3000
+MUSIC_FADEIN_FACTOR=3
 
 #image file locations
 IMG_DIR = 'images/'
@@ -99,6 +107,7 @@ STAT_MAXBAG='maxBag' #the current maximum bag size
 STAT_MONEY='money' #the players money 
 STAT_BAG = 'bag' #players current bag (list)
 STAT_ORIGINAL_BAG='origBag' #the original bag size assigned to the player at game runtime
+STAT_HP='hp' #stat for players hp
 STAT_VISION='vision' #the stat for range of vision of the player
 STAT_RANGE='range' #actual range of vision fior the player (behind the scenes)
 STAT_DMG='dmg' #actual damage stat for how much dmg the player does - works behind the scenes
@@ -111,8 +120,8 @@ STAT_SP_MULTI=15 #speed mulitplier for delay calculation
 
 
 #player constants
-PLAYER_STATS = {STAT_SP:8,STAT_STR:8,STAT_MAXBAG:4,STAT_MONEY:0,STAT_VISION:1} #player initial stats
-PLAYER_CENTERPOS = (4,4) #players "center" position on the screen - FIX (dynamic?)
+PLAYER_STATS = {STAT_SP:8,STAT_STR:8,STAT_MAXBAG:4,STAT_MONEY:0,STAT_VISION:1,STAT_HP:3} #player initial stats
+PLAYER_CENTERPOS = (5,4) #players "center" position on the screen - FIX (dynamic?)
 PLAYER_STARTPOS = (1,4) #players starting position
 
 #AI constants
@@ -136,20 +145,25 @@ ZOMBIE_STATS = "zStats"
 
 #dictionaries containing all info for different types of zombies
 ZOMBIE_EZ  =    {ZOMBIE_IMG: IMG_ZOMBIE_EZ ,
-                 ZOMBIE_STATS:{ZOMBIE_TYPE:ZOMBIE_TYPE_EZ,STAT_SP:0.008, STAT_STR:0.05}}
+                 ZOMBIE_STATS:{ZOMBIE_TYPE:ZOMBIE_TYPE_EZ,STAT_SP:0.006, STAT_STR:0.05}}
 ZOMBIE_MED =    {ZOMBIE_IMG: IMG_ZOMBIE_MED,
-                 ZOMBIE_STATS:{ZOMBIE_TYPE:ZOMBIE_TYPE_MED,STAT_SP:0.01, STAT_STR:0.06}}
+                 ZOMBIE_STATS:{ZOMBIE_TYPE:ZOMBIE_TYPE_MED,STAT_SP:0.009, STAT_STR:0.06}}
 ZOMBIE_HARD =   {ZOMBIE_IMG: IMG_ZOMBIE_HARD,
-                 ZOMBIE_STATS:{ZOMBIE_TYPE:ZOMBIE_TYPE_HARD,STAT_SP:0.015,  STAT_STR:0.07}}
+                 ZOMBIE_STATS:{ZOMBIE_TYPE:ZOMBIE_TYPE_HARD,STAT_SP:0.01,  STAT_STR:0.07}}
 ZOMBIE_EXTREME= {ZOMBIE_IMG: IMG_ZOMBIE_EXTREME,
-                 ZOMBIE_STATS:{ZOMBIE_TYPE:ZOMBIE_TYPE_EXTREME,STAT_SP:0.004,  STAT_STR:1}}
+                 ZOMBIE_STATS:{ZOMBIE_TYPE:ZOMBIE_TYPE_EXTREME,STAT_SP:0.001,  STAT_STR:1}}
+
+#map constants
+MAP_FILE = DATA_DIR + "above.dat" #name of the aboveground map file
+MAP_FILE_DLIM='\t' #file delimiter for aboveground map file
+MAP_OVERSCROLL=(TILE_SIZE[X]/len(SPRITE_TEMPLATE[1][0]),TILE_SIZE[Y]/len(SPRITE_TEMPLATE[1][0])) #overscroll safety net to help with map edge clipping - basically the "stepping" distance when the player walks
 
 #game level constants/option flags for various game levels/difficulties
 GAME_LVL_FREE="Free Play"
-GAME_LVL_EZ=" Easy "
-GAME_LVL_MED=" Medium "
-GAME_LVL_HARD=" Hard "
-GAME_LVL_EXTREME=" Extreme! "
+GAME_LVL_EZ="Easy"
+GAME_LVL_MED="Medium"
+GAME_LVL_HARD="Hard"
+GAME_LVL_EXTREME="Extreme!"
 GAME_OPT_FOW="fow" #game option for fog of war
 GAME_OPT_ZOMBIES="z" #game option to hold list of zombies (stats, etc)
 GAME_OPT_ZOMBIE_NUM="zNum" #game option for the number of zombies
@@ -160,8 +174,8 @@ WIN_POS_RAND='?' #flag for a random winning position, within the bounds of the m
 
 GAME_LVLS = {
                 #free play level options
-                GAME_LVL_FREE  :{GAME_OPT_MAP_SIZE:(40,40),
-                                 GAME_OPT_WIN_POS :(38,38), #last row, last col
+                GAME_LVL_FREE  :{GAME_OPT_MAP_SIZE:(20,20),
+                                 GAME_OPT_WIN_POS :(18,18), #last row, last col
                                  GAME_OPT_FOW     :False, #no fow
                                  GAME_OPT_ZOMBIES :[]}, #no zombies
                 #easy level options
@@ -174,7 +188,7 @@ GAME_LVLS = {
                 #medium level options
                 GAME_LVL_MED  :{GAME_OPT_MAP_SIZE:(50,50),
                                 GAME_OPT_WIN_POS :(WIN_POS_RAND,48), #winning tile position (random, but on the last row!)
-                                GAME_OPT_FOW     :True,  #fow
+                                GAME_OPT_FOW     :False,  #fow
                                 GAME_OPT_ZOMBIES :[ #10 ez, and 10 medium zombies
                                                      dict(ZOMBIE_EZ.items() +  [(GAME_OPT_ZOMBIE_NUM,10)]),
                                                      dict(ZOMBIE_MED.items() + [(GAME_OPT_ZOMBIE_NUM,10)])
@@ -182,7 +196,7 @@ GAME_LVLS = {
                 #hard level options
                 GAME_LVL_HARD   :{GAME_OPT_MAP_SIZE:(60,60),
                                   GAME_OPT_WIN_POS :(WIN_POS_RAND,58), #winning tile position (random, but on the last row!)
-                                  GAME_OPT_FOW     :True,  #fow
+                                  GAME_OPT_FOW     :False,  #fow
                                   GAME_OPT_ZOMBIES :[ #10 ez, 10 medium, and 5 hard zombies
                                                      dict(ZOMBIE_EZ.items() +  [(GAME_OPT_ZOMBIE_NUM,10)]),
                                                      dict(ZOMBIE_MED.items() + [(GAME_OPT_ZOMBIE_NUM,10)]),
@@ -191,7 +205,7 @@ GAME_LVLS = {
                 #extreme level options
                 GAME_LVL_EXTREME:{GAME_OPT_MAP_SIZE:(80,80),
                                   GAME_OPT_WIN_POS :(WIN_POS_RAND,78), #winning tile position (random, but on the last row!)
-                                  GAME_OPT_FOW     :True,  #fow
+                                  GAME_OPT_FOW     :False,  #fow
                                   GAME_OPT_ZOMBIES :[ #15 ez, 10 medium, and 5 hard zombies
                                                      dict(ZOMBIE_EZ.items() +  [(GAME_OPT_ZOMBIE_NUM,10)]),
                                                      dict(ZOMBIE_MED.items() + [(GAME_OPT_ZOMBIE_NUM,10)]),
@@ -332,9 +346,9 @@ SHOP_BTN_STR="shopStr" #id for buy str button
 SHOP_BTN_SP="shopSp" #id for buy sp button
 SHOP_BTN_VISION="shopVision" #id for buy vision button
 #label text for the shop items
-SHOP_LABEL_TEXT=["Strength   $"+str(SHOP_COST_STR),
-                 "Speed         $"+str(SHOP_COST_SP),
-                 "Vision        $"+str(SHOP_COST_VISION)]
+SHOP_LABEL_TEXT=["Power      $"+str(SHOP_COST_STR),
+                 "Speed       $"+str(SHOP_COST_SP),
+                 "Vision      $"+str(SHOP_COST_VISION)]
 
 #window titles
 MENU_TITLE = "Main Menu" #main menu title
@@ -399,10 +413,13 @@ purchase any minerals you may come across while
 exploring and train you to navigate
 the cave more efficiently.
 
-From your understanding of modern day zombies, they
-should burst into flames once the sun touches them,
-so your best bet if you run into any zombies is to
-lead them out and into the sun.
+From your understanding of modern day zombies, 
+they should burst into flames once the sun touches
+them, so your best bet if you run into any zombies
+is to lead them out and into the sun.
+
+If a zombie catches you, you will lose a life.
+The game is lost when you have no lives left.
 
 P.S. Use the arrow keys to move your character!
 """
@@ -410,19 +427,20 @@ P.S. Use the arrow keys to move your character!
 #text for the zombies window
 HOW_ZOMBIES_EZ_TXT =\
 """Green
-    - Slowest and weakest zombie
     - Steals your bag
-    - Sends you back to the shop"""
+    - Teleports you to shop"""
 HOW_ZOMBIES_MED_TXT =\
 """Yellow
-    - Faster and stronger zombie
-    - Steals your bag
-    - Steals all of your money"""
+    - Steals your bag & cash
+    - Teleports you to shop"""
 HOW_ZOMBIES_HARD_TXT =\
 """Black
-    - Fastest and strongest zombie
-    - Kills you...game over!"""
-
+    - Takes additional life
+    - Teleports you randomly"""
+HOW_ZOMBIES_EXTREME_TXT =\
+"""Ghostly
+    - Steals your bag & cash
+    - Teleports you randomly"""
 
 #
 # DONT FORGET - THERE IS A FEW CONSTANTS AT THE TOP OF ZOMBIEMINER 
