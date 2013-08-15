@@ -97,7 +97,7 @@ Revision History:
     - added in some basic sounds (hitting, breaking, shopping) added necessary constants
     - last minute fix...have to check for stat type before multuiplying zombie stats based on random pos
     
-010  Aug 10th, 2013
+010  Aug 14th, 2013
     - serious changes to scrollMap...i dont know what i was even thinking before. function requires way less parameters and totally different logic
       also had to make a small change in gameObjects to TileMap.move so self.shift isnt cumulatative
     - planning to add a "ghost"-zombie that can move through diggable tiles. added to tryAction an "ignore tiles - just move" flag for the ghost
