@@ -125,7 +125,8 @@ Revision History:
     - redid a bunch of constants and spacing for the windows to add new ghost zombie (particularly HOW_ZOMBIES_WIN)
     - to do:FIX CONSTANTS FOR REAL GAME!!!
             BETTER AI!!!
-             
+    - minor sound bug fix...for some reason Sound.get_raw() doesn't exist anymore?? maybe I had on older pygame installed
+      ... at any rate, replaced with get_length(). This could pose problems if the lengths match,but that seems unlikely for now :)
 """
 
 

@@ -125,8 +125,8 @@ def humanTime(time):
 #returns - the music currently being played as of the end of this function
 def playMusic(oldMusic,newMusic,vol,fadeTime):
     
-    #if there is music playing and its the same as the new music were trying to play
-    if(oldMusic and newMusic.get_raw() == oldMusic.get_raw()):
+    #if there is music playing and its the same as the new music were trying to play (matches on length)
+    if(oldMusic and newMusic.get_length() == oldMusic.get_length()):
         return oldMusic #just return the old music. no need to restart
     
     #if the newMusic is actually new and there is a song playing, fade it out
@@ -145,7 +145,7 @@ def playMusic(oldMusic,newMusic,vol,fadeTime):
 def playSound(sndFile,volume=SND_VOL_LOUD):
     snd=pygame.mixer.Sound(sndFile)
     snd.set_volume(volume)
-    pygame.mixer.Sound(snd).play()
+    snd.play()
     
     return snd
     
