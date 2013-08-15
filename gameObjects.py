@@ -251,12 +251,12 @@ class TileMap(list):
                 shift=(shift[X],0)
             if (self[0][0].pos[X]+self.shift[X]>=min[X] and shift[X]>0):
                 shift=(0,shift[Y])
-                
+        
         if (max): #maximum bound
-            if (self[-1][-1].pos[Y]+self.shift[Y]+self.tileSize[Y]<=max[Y] and shift[Y]<0):
-                shift=(shift[X],0)
-            if (self[-1][-1].pos[X]+self.shift[X]+self.tileSize[X]<=max[X] and shift[X]<0):
-                shift=(0,shift[Y])
+            if (self[-1][-1].pos[Y]+self.shift[Y]+self.tileSize[Y]<max[Y] and shift[Y]<0):
+                shift=(shift[X],-self.size[Y]*self.tileSize[Y]+max[Y])
+            if (self[-1][-1].pos[X]+self.shift[X]+self.tileSize[X]<max[X] and shift[X]<0):
+                shift=(-self.size[X]*self.tileSize[X]+max[X],shift[Y])
                 
         self.shift = (shift[X],shift[Y])
     
@@ -316,12 +316,11 @@ class TileMap(list):
     def randomPos(self,startPos=(0,0)):
         randPos=(-1,-1) 
         
-        #keep regenerating positions until its not less than the starting Position, its not the winning position, and the tile has a value (no aboveground, blocked or winning tile)
+        #keep regenerating positions until its not less than the starting Position and the tile has a value (no aboveground, blocked or winning tile)
         while(randPos[X]<startPos[X] and randPos[Y]<startPos[Y]
-              and randPos!=self.winPos
-              and self.getTile(randPos).attributes[ATTR_VAL]>0):
+              or self.getTile(randPos).attributes[ATTR_VAL]>0):
             randPos=(random.randint(0,self.size[X]-1),random.randint(0,self.size[Y]-1))
-                     
+                        
         return randPos
         
 #A map template reader that reads a map template from an external file and puts it into a 2d list

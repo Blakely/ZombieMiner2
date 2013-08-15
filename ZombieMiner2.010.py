@@ -102,11 +102,19 @@ Revision History:
       also had to make a small change in gameObjects to TileMap.move so self.shift isnt cumulatative
     - planning to add a "ghost"-zombie that can move through diggable tiles. added to tryAction an "ignore tiles - just move" flag for the ghost
     - made a tilemap.randomPos to generate random positions for the zombie creation, teleporting, and winning tile (done). in the midst of integrating it throughout - almost done!
+    - teleport() now takes the tilemap and tileset to be able to replace tiles if they are diggable...so people dont get placed ontop of tiles
+    - fixed tilemap.randomPos to work better, regenerating positions until its a "good" one (not blocked, not winning, after start pos)
+      ...as such, startPos isn't really needded but i will leave it there for future mods, just incase. i foresee it being useful.
+    - added an inRange() function and a constant ZOMBIE_AI_RANGE, as well as some new logic in handleZombies to try and curb zombie trains.
+      ...zombies should only chase after the player if they are within range of the player.
+    - added addtional constants for the "extreme" difficulty with ghost-zombies
+    - had to make a change to how tilemap.move handles maximum bounds - it was bugged after the change to scrollMap
+    - 1 last minor tweak to tilemap.randomPos...was some bad logic. Also commented out "inRange" in handleZombies for testing. will uncomment on next iteration
 """
 
 
 #import needed modules for pygame
-import pygame, sys, random
+import pygame, sys, random, math
 from pygame.locals import *
 
 #initialize pygame, fonts, and the sound mixer
@@ -147,29 +155,30 @@ SHOP_WIN=Window((ALIGN_CENTER,5),WINSET,len(SHOP_LBLS),SHOP_TITLE,SHOP_LBLS,SHOP
 
 
 # ui elements for the main menu buttons
-MENU_BTNS=[Button(MENU_BTN_PLAY,    (ALIGN_CENTER,50),  BTNSET,textImage(MENU_BTN_PLAY,BTN_FONT,WIN_FONT_COLOR)),
-           Button(MENU_BTN_HOW,     (ALIGN_CENTER,85),  BTNSET,textImage(MENU_BTN_HOW,BTN_FONT,WIN_FONT_COLOR)),
-           Button(MENU_BTN_TIMES,   (ALIGN_CENTER,120),  BTNSET,textImage(MENU_BTN_TIMES,BTN_FONT,WIN_FONT_COLOR)),
-           Button(MENU_BTN_EXIT,    (ALIGN_CENTER,155), BTNSET,textImage(MENU_BTN_EXIT,BTN_FONT,WIN_FONT_COLOR))]
+MENU_BTNS=[Button(MENU_BTN_PLAY,    (ALIGN_CENTER,50),  BTNSET,textImage(MENU_BTN_PLAY, BTN_FONT,WIN_FONT_COLOR)),
+           Button(MENU_BTN_HOW,     (ALIGN_CENTER,85),  BTNSET,textImage(MENU_BTN_HOW,  BTN_FONT,WIN_FONT_COLOR)),
+           Button(MENU_BTN_TIMES,   (ALIGN_CENTER,120), BTNSET,textImage(MENU_BTN_TIMES,BTN_FONT,WIN_FONT_COLOR)),
+           Button(MENU_BTN_EXIT,    (ALIGN_CENTER,155), BTNSET,textImage(MENU_BTN_EXIT, BTN_FONT,WIN_FONT_COLOR))]
 #window for the main menu  
 MENU_WIN=Window((ALIGN_CENTER,ALIGN_CENTER),WINSET,len(MENU_BTNS)+1,MENU_TITLE,None,MENU_BTNS)
 
 # ui elements for the level select menu
-LVL_BTNS=[Button(MENU_LVL_BTN_FREE, (ALIGN_CENTER,55),  BTNSET,textImage(MENU_LVL_BTN_FREE,BTN_FONT,WIN_FONT_COLOR)),
-          Button(MENU_LVL_BTN_EZ,   (ALIGN_CENTER,85),  BTNSET,textImage(MENU_LVL_BTN_EZ,BTN_FONT,WIN_FONT_COLOR)),
-          Button(MENU_LVL_BTN_MED,  (ALIGN_CENTER,115), BTNSET,textImage(MENU_LVL_BTN_MED,BTN_FONT,WIN_FONT_COLOR)),
-          Button(MENU_LVL_BTN_HARD, (ALIGN_CENTER,145), BTNSET,textImage(MENU_LVL_BTN_HARD,BTN_FONT,WIN_FONT_COLOR)),
-          Button(MENU_BTN,          (ALIGN_CENTER,185), BTNSET,textImage(MENU_BTN,BTN_FONT,WIN_FONT_COLOR))]
+LVL_BTNS=[Button(MENU_LVL_BTN_FREE,     (ALIGN_CENTER,50),  BTNSET,textImage(MENU_LVL_BTN_FREE,   BTN_FONT,WIN_FONT_COLOR)),
+          Button(MENU_LVL_BTN_EZ,       (ALIGN_CENTER,85),  BTNSET,textImage(MENU_LVL_BTN_EZ,     BTN_FONT,WIN_FONT_COLOR)),
+          Button(MENU_LVL_BTN_MED,      (ALIGN_CENTER,120), BTNSET,textImage(MENU_LVL_BTN_MED,    BTN_FONT,WIN_FONT_COLOR)),
+          Button(MENU_LVL_BTN_HARD,     (ALIGN_CENTER,155), BTNSET,textImage(MENU_LVL_BTN_HARD,   BTN_FONT,WIN_FONT_COLOR)),
+          Button(MENU_LVL_BTN_EXTREME,  (ALIGN_CENTER,190), BTNSET,textImage(MENU_LVL_BTN_EXTREME,BTN_FONT,WIN_FONT_COLOR)),
+          Button(MENU_BTN,              (ALIGN_CENTER,235), BTNSET,textImage(MENU_BTN,            BTN_FONT,WIN_FONT_COLOR))]
 #window for level/difficulty select menu
-LVL_WIN = Window((ALIGN_CENTER,ALIGN_CENTER),WINSET,len(LVL_BTNS)+1,MENU_LVL_TITLE,None,LVL_BTNS)
+LVL_WIN = Window((ALIGN_CENTER,ALIGN_CENTER),WINSET,len(LVL_BTNS)+2,MENU_LVL_TITLE,None,LVL_BTNS)
 
 
 #Instruction windows
 #-------------------------------------------------------------------------------
 # ui elements for the main instruction windows
 HOW_LBLS=[Label((ALIGN_CENTER,ALIGN_CENTER),HOW_TXT,WIN_FONT,WIN_FONT_COLOR,LBL_LINE_DLIM,True)]
-HOW_BTNS=[Button(HOW_BTN_MECH,  (40,ALIGN_BOTTOM),  BTNSET,textImage(HOW_BTN_MECH,BTN_FONT,WIN_FONT_COLOR)),
-          Button(MENU_BTN,      (220,ALIGN_BOTTOM), BTNSET,textImage(MENU_BTN,BTN_FONT,WIN_FONT_COLOR))]
+HOW_BTNS=[Button(HOW_BTN_MECH,  (40,ALIGN_BOTTOM),  BTNSET,textImage(HOW_BTN_MECH,  BTN_FONT,WIN_FONT_COLOR)),
+          Button(MENU_BTN,      (220,ALIGN_BOTTOM), BTNSET,textImage(MENU_BTN,      BTN_FONT,WIN_FONT_COLOR))]
 #window for main instructions window
 HOW_WIN=Window((ALIGN_CENTER,ALIGN_CENTER),
                WINSET,len(HOW_LBLS[0].text.split(LBL_LINE_DLIM))+1,HOW_TITLE,HOW_LBLS,HOW_BTNS)
@@ -178,7 +187,7 @@ HOW_WIN=Window((ALIGN_CENTER,ALIGN_CENTER),
 # ui elements for the game mechanics window
 HOW_MECH_LBLS=[Label((ALIGN_CENTER,ALIGN_CENTER),HOW_MECH_TXT,WIN_FONT,WIN_FONT_COLOR,LBL_LINE_DLIM,True)]
 HOW_MECH_BTNS=[Button(HOW_BTN_ZOMBIES,  (47,ALIGN_BOTTOM),  BTNSET,textImage(HOW_BTN_ZOMBIES,BTN_FONT,WIN_FONT_COLOR)),
-               Button(MENU_BTN,         (220,ALIGN_BOTTOM), BTNSET,textImage(MENU_BTN,BTN_FONT,WIN_FONT_COLOR))]
+               Button(MENU_BTN,         (220,ALIGN_BOTTOM), BTNSET,textImage(MENU_BTN,       BTN_FONT,WIN_FONT_COLOR))]
 #window for game mechanics
 HOW_MECH_WIN=Window((ALIGN_CENTER,ALIGN_CENTER),
                     WINSET,len(HOW_MECH_LBLS[0].text.split(LBL_LINE_DLIM))+1,HOW_MECH_TITLE,HOW_MECH_LBLS,HOW_MECH_BTNS)
@@ -190,8 +199,8 @@ HOW_ZOMBIE_IMGS= [Drawable((50,65),ImageSet(IMG_ZOMBIE_EZ,   SPRITE_SIZE,TILE_TR
 HOW_ZOMBIES_LBLS=[Label((100,45), HOW_ZOMBIES_EZ_TXT,     WIN_FONT,WIN_FONT_COLOR,LBL_LINE_DLIM),
                   Label((100,155),HOW_ZOMBIES_MED_TXT,    WIN_FONT,WIN_FONT_COLOR,LBL_LINE_DLIM),
                   Label((100,265),HOW_ZOMBIES_HARD_TXT,   WIN_FONT,WIN_FONT_COLOR,LBL_LINE_DLIM)]
-HOW_ZOMBIES_BTNS=[Button(HOW_BTN_MINES, (40,ALIGN_BOTTOM),  BTNSET,textImage(HOW_BTN_MINES,BTN_FONT,WIN_FONT_COLOR)),
-                  Button(MENU_BTN,      (220,ALIGN_BOTTOM), BTNSET,textImage(MENU_BTN,BTN_FONT,WIN_FONT_COLOR))]
+HOW_ZOMBIES_BTNS=[Button(HOW_BTN_MINES, (40,ALIGN_BOTTOM),  BTNSET,textImage(HOW_BTN_MINES, BTN_FONT,WIN_FONT_COLOR)),
+                  Button(MENU_BTN,      (220,ALIGN_BOTTOM), BTNSET,textImage(MENU_BTN,      BTN_FONT,WIN_FONT_COLOR))]
 #window for zombies descriptions
 HOW_ZOMBIES_WIN =Window((ALIGN_CENTER,ALIGN_CENTER),
                         WINSET,len(HOW_ZOMBIES_LBLS[0].text.split(LBL_LINE_DLIM))+10,HOW_ZOMBIES_TITLE,HOW_ZOMBIES_LBLS,HOW_ZOMBIES_BTNS,HOW_ZOMBIE_IMGS)
@@ -352,7 +361,7 @@ def writeTimesFile(times):
 def createZombies(zData,tilemap,tileset,spriteTemplate,target,startPos=(0,0)):
     zombieImg=loadImage(zData[ZOMBIE_IMG],TILE_TRANSCOLOR) #load spriteset image for zombies
     zombieAI = AI(target) #setup a simple AI that targets the player
-    
+
     zombies=list() #holder list for zombies
     
     #create given # of zombies
@@ -425,8 +434,8 @@ def tryAction(screen,miner,direction,tilemap,ignoreType=False):
     nextPos = (miner.getPos()[X]+move[X],miner.getPos()[Y]+move[Y])
     
     #make sure the next position to be acted towards is within the screens dimensions
-    if(nextPos[X]>=0 and nextPos[X]<tilemap.getSize()[X] and
-       nextPos[Y]>=0 and nextPos[Y]<tilemap.getSize()[Y]):
+    if(nextPos[X]>=0 and nextPos[X]<tilemap.size[X] and
+       nextPos[Y]>=0 and nextPos[Y]<tilemap.size[Y]):
         nextTile = tilemap.getTile(nextPos) #get the next tile in the chosen direction
         
         #if we dont care what the next type of tile is, just move (for ghosts)
@@ -435,15 +444,15 @@ def tryAction(screen,miner,direction,tilemap,ignoreType=False):
                 return nextTile
         else:
             #if new direction next tileis blocked...
-            if(nextTile.attributes['type']==MINE_BLOCK_FULL):
+            if(nextTile.attributes[ATTR_TYPE]==MINE_BLOCK_FULL):
                 return None #can't walk in that direction
             
             #if new direction is up, but up is blocked...
-            elif (direction==DIR_UP and tilemap.getTile(nextPos).attributes['type']==MINE_BLOCK_UP):
+            elif (direction==DIR_UP and tilemap.getTile(nextPos).attributes[ATTR_TYPE]==MINE_BLOCK_UP):
                 return None #can't act in that direction
             
             #if the new direction is diggable
-            elif (nextTile.attributes['type']==MINE_DIGGABLE):
+            elif (nextTile.attributes[ATTR_TYPE]==MINE_DIGGABLE):
                 if(miner.doAction(ACT_DIG)): #dig it and return the tile being dug
                     return nextTile
             
@@ -547,7 +556,7 @@ def handlePlayer(screen,tilemap,tileset,player):
     if (type(playerAct) is tuple):
         moveVect = playerAct
         #scroll the map the distance that the player has moved
-        scrollMap(screen,player,tilemap,moveVect)
+        scrollMap(screen,player,tilemap)
         
     # if the player is done hitting
     elif (playerAct==ACT_DIG):
@@ -583,10 +592,16 @@ def handlePlayer(screen,tilemap,tileset,player):
 #Teleports a miner (currently just the player) to a specified location on the map and cancels any actions
 # miner (Miner) - the miner to teleport
 # pos (tuple) - the position to teleport to
-def teleport(miner,pos):
+# tilemap (TileMap) - the tilemap, to check for any tiles we may have been placed on
+def teleport(miner,pos,tilemap,tileset):
     #move the miner
     miner.setPos(pos)
     
+    #if the tilemap is a "diggable" tile (this *shouldn't* ever result in people being placed on blocked tiles due to preprocessing)
+    if(tilemap.getTile(pos).attributes[ATTR_TYPE]==MINE_DIGGABLE):
+        #replace the tile in that pos with a "dug" tile
+        tilemap.getTile(pos).change(mines[MINE_DUG],tileset[MINE_DUG]) 
+        
     #cancel any action
     miner.frame=0
     miner.act=ACT_NONE
@@ -594,6 +609,26 @@ def teleport(miner,pos):
     miner.actTile=None
     miner.updateFrame()
 
+#checks if two miners are "within range" of eachother
+# miner1 (Miner) - the first miner
+# miner2 (Miner) - the second miner
+# rangeDist (int) - the range threshold to qualify as "in" or "out" of range 
+#returns - true if in range of eachother, false otherwise
+def inRange(miner1,miner2,rangeDist):
+    #get the rise and run difference between the miners positions
+    diffX=miner1.getPos()[X]-miner2.getPos()[X]
+    diffY=miner1.getPos()[Y]-miner2.getPos()[Y]
+    
+    #pythagorean theorum to get distance between two miners positions
+    dist=math.sqrt(math.pow(diffX,2)+math.pow(diffY,2))
+    
+    #if its within range, return true. otherwise false
+    if (dist<rangeDist):
+        return True
+    else:
+        return False
+    
+    
 #handles the zombie-updating part of the game loop. checks for any performs any zombie actions and processes the results
 # screen (display) - the screen being drawn to
 # tilemap (TileMap) - the tilemap being used currently
@@ -630,12 +665,12 @@ def handleZombies(screen,tilemap,tileset,zombies,player,deathSet):
             
             #if its a hard zombie, steal their bag and send them to a random location
             if(zombie.stats[ZOMBIE_TYPE]==ZOMBIE_TYPE_HARD):
-                #get random pos to teleport player to
+                #get random pos to teleport player to (will only pick valid, diggable, non-winning tiles)
                 randPos=tilemap.randomPos()
+                
                 #teleport player to that pos & scroll map
-                teleport(player,randPos)
+                teleport(player,randPos,tilemap,tileset)
                 scrollMap(screen,player,tilemap) # center map on player
-                tilemap.getTile(randPos).change(mines[MINE_DUG],tileset[MINE_DUG]) #replace the tile in that pos with a "dug" tile
             
             #if its a mediun zombie, steal the players cash and bag
             elif(zombie.stats[ZOMBIE_TYPE]==ZOMBIE_TYPE_MED):
@@ -643,18 +678,20 @@ def handleZombies(screen,tilemap,tileset,zombies,player,deathSet):
             
             #if its an easy zombie, steal the bag and send player
             elif (zombie.stats[ZOMBIE_TYPE]==ZOMBIE_TYPE_EZ):
-                teleport(player,PLAYER_STARTPOS) #teleport player
+                teleport(player,PLAYER_STARTPOS,tilemap,tileset) #teleport player
                 scrollMap(screen,player,tilemap) # scroll the map to center it on the player
             
             #if the game didn't end, the stat window needs to be updated, so set the return flag (FIXED)
             returnWin = WIN_STAT
         
+        #only run the AI and try actions if zombie is within range of its target (e.g player)
+        #if (inRange(zombie,zombie.ai.target,ZOMBIE_AI_RANGE)):
         #let the AI kick in to choose a direction,then try and act in that direction
         nearTiles=tilemap.getNearTiles(zombie.getPos()) #get tiles around zombie
         newDir=zombie.runAI(nearTiles)#get ai to choose path based on nearby tiles
         
         #try to act in the direction chosen
-        #(will ignore the tile type and always move when doing direction checks if zombie type = extreme. AI handles avoiding blocked tiles)
+        #(will ignore the tile type and always move (cept for blocked tiles!) when doing direction checks if zombie type = extreme. AI handles avoiding blocked tiles)
         zTryResult = tryAction(screen,zombie,newDir,tilemap,(zombie.stats[ZOMBIE_TYPE]==ZOMBIE_TYPE_EXTREME))
         if(zTryResult):
             zombie.actTile=zTryResult
@@ -706,10 +743,11 @@ def game(screen,level):
     zombies=list()
     for zData in options[GAME_OPT_ZOMBIES]:
         zombies = zombies + createZombies(zData.copy(),tilemap,TILESET,SPRITE_TEMPLATE,player,(1,len(aboveground))) #copy zombie data (zData) so it doesnt overwrite later plays
+        zombies = zombies + createZombies(zData.copy(),tilemap,TILESET,SPRITE_TEMPLATE,player,(1,len(aboveground))) #copy zombie data (zData) so it doesnt overwrite later plays
     tilemap.addMobs(zombies) #add zombies to the tilemap
     
     #place the winning tile! never allow random placement in the aboveground y-area or before half the y size of the map (whichever comes last!)
-    setWinningTile(options[GAME_OPT_WIN_POS],tilemap,TILESET,(1,max(len(aboveground),tilemap.size/2)))
+    setWinningTile(options[GAME_OPT_WIN_POS],tilemap,TILESET,(1,max(len(aboveground),tilemap.size[Y]/2)))
 
     #setup the fire spriteset for any zombies that need to burn!
     fireImg=loadImage(IMG_FIRE,TILE_TRANSCOLOR)

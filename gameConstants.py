@@ -15,7 +15,7 @@
 # Aug 2,13   - added constants for best times + a few other non-big ones
 # Aug 5,13   - changed a lot of the game constants to make the game more challenging/fun
 
-import pygame
+import pygame,math
 from pygame.locals import *
 
 #x,y,width,height in position tuples and Rect's, etc etc...
@@ -62,10 +62,9 @@ WIN_END = 1 #end-game window needs to be updated
 #sound file locations
 SND_DIR='sounds/'
 SND_HIT=SND_DIR+'hit.wav'
-SND_BREAK=SND_DIR+'hit.wav'
-SND_MINE=SND_DIR+'hit.wav'
-SND_SHOP=SND_DIR+'hit.wav'
-SND_HIT=SND_DIR+'hit.wav'
+SND_BREAK=SND_DIR+'break.wav'
+SND_MINE=SND_DIR+'mine.wav'
+SND_SHOP=SND_DIR+'shop.wav'
 
 
 #image file locations
@@ -73,6 +72,7 @@ IMG_DIR = 'images/'
 IMG_ZOMBIE_EZ=IMG_DIR+'zombie.png'
 IMG_ZOMBIE_MED=IMG_DIR+'zombie4.png'
 IMG_ZOMBIE_HARD=IMG_DIR+'zombie3.png'
+IMG_ZOMBIE_EXTREME=IMG_DIR+'ghost.png'
 IMG_PLAYER=IMG_DIR+'player.png'
 IMG_CRACKS=IMG_DIR+'cracks.png'
 IMG_TILESET=IMG_DIR+'mines.png'
@@ -111,15 +111,18 @@ STAT_SP_MULTI=15 #speed mulitplier for delay calculation
 
 
 #player constants
-PLAYER_STATS = {STAT_SP:1,STAT_STR:1,STAT_MAXBAG:4,STAT_MONEY:0,STAT_VISION:1} #player initial stats
+PLAYER_STATS = {STAT_SP:8,STAT_STR:8,STAT_MAXBAG:4,STAT_MONEY:0,STAT_VISION:1} #player initial stats
 PLAYER_CENTERPOS = (4,4) #players "center" position on the screen - FIX (dynamic?)
 PLAYER_STARTPOS = (1,4) #players starting position
 
+#AI constants
 #order the AI will check in order to choose which direction to move in
 AI_CHECKORDER = {DIR_UP:    [DIR_UP,DIR_RIGHT,DIR_LEFT,DIR_DOWN],
                  DIR_RIGHT: [DIR_RIGHT,DIR_UP,DIR_DOWN,DIR_LEFT],
                  DIR_LEFT:  [DIR_LEFT,DIR_UP,DIR_DOWN,DIR_RIGHT],
                  DIR_DOWN:  [DIR_DOWN,DIR_RIGHT,DIR_LEFT,DIR_UP]}
+
+ZOMBIE_AI_RANGE = 10 #only initialize AI if zombie is within this range of tiles from its target
 
 #zombie constants for types of zombies and zombie-specific stats
 ZOMBIE_TYPE="zType" #mob stat for the type of mob
@@ -130,20 +133,23 @@ ZOMBIE_TYPE_EXTREME='xtreme'
 ZOMBIE_IMG ="zImg" #img for mob
 ZOMBIE_STATS = "zStats"
 
+
 #dictionaries containing all info for different types of zombies
-ZOMBIE_EZ  = {ZOMBIE_IMG: IMG_ZOMBIE_EZ ,
-              ZOMBIE_STATS:{ZOMBIE_TYPE:ZOMBIE_TYPE_EZ,STAT_SP:0.01, STAT_STR:0.05}}
-ZOMBIE_MED = {ZOMBIE_IMG: IMG_ZOMBIE_MED,
-              ZOMBIE_STATS:{ZOMBIE_TYPE:ZOMBIE_TYPE_MED,STAT_SP:0.02, STAT_STR:0.06}}
-ZOMBIE_HARD= {ZOMBIE_IMG: IMG_ZOMBIE_HARD,
-              ZOMBIE_STATS:{ZOMBIE_TYPE:ZOMBIE_TYPE_HARD,STAT_SP:0.03,  STAT_STR:0.06}}
+ZOMBIE_EZ  =    {ZOMBIE_IMG: IMG_ZOMBIE_EZ ,
+                 ZOMBIE_STATS:{ZOMBIE_TYPE:ZOMBIE_TYPE_EZ,STAT_SP:0.008, STAT_STR:0.05}}
+ZOMBIE_MED =    {ZOMBIE_IMG: IMG_ZOMBIE_MED,
+                 ZOMBIE_STATS:{ZOMBIE_TYPE:ZOMBIE_TYPE_MED,STAT_SP:0.01, STAT_STR:0.06}}
+ZOMBIE_HARD =   {ZOMBIE_IMG: IMG_ZOMBIE_HARD,
+                 ZOMBIE_STATS:{ZOMBIE_TYPE:ZOMBIE_TYPE_HARD,STAT_SP:0.015,  STAT_STR:0.07}}
+ZOMBIE_EXTREME= {ZOMBIE_IMG: IMG_ZOMBIE_EXTREME,
+                 ZOMBIE_STATS:{ZOMBIE_TYPE:ZOMBIE_TYPE_EXTREME,STAT_SP:0.004,  STAT_STR:1}}
 
-
-#game constants/option flags for various game levels/difficulties
+#game level constants/option flags for various game levels/difficulties
 GAME_LVL_FREE="Free Play"
-GAME_LVL_EZ="Easy"
-GAME_LVL_MED="Medium"
-GAME_LVL_HARD="Hard" 
+GAME_LVL_EZ=" Easy "
+GAME_LVL_MED=" Medium "
+GAME_LVL_HARD=" Hard "
+GAME_LVL_EXTREME=" Extreme! "
 GAME_OPT_FOW="fow" #game option for fog of war
 GAME_OPT_ZOMBIES="z" #game option to hold list of zombies (stats, etc)
 GAME_OPT_ZOMBIE_NUM="zNum" #game option for the number of zombies
@@ -154,34 +160,44 @@ WIN_POS_RAND='?' #flag for a random winning position, within the bounds of the m
 
 GAME_LVLS = {
                 #free play level options
-                GAME_LVL_FREE :{GAME_OPT_MAP_SIZE:(40,40),
-                                GAME_OPT_WIN_POS :(38,38), #last row, last col
-                                GAME_OPT_FOW     :False, #no fow
-                                GAME_OPT_ZOMBIES :[]}, #no zombies
+                GAME_LVL_FREE  :{GAME_OPT_MAP_SIZE:(40,40),
+                                 GAME_OPT_WIN_POS :(38,38), #last row, last col
+                                 GAME_OPT_FOW     :False, #no fow
+                                 GAME_OPT_ZOMBIES :[]}, #no zombies
                 #easy level options
-                GAME_LVL_EZ   :{GAME_OPT_MAP_SIZE:(40,40),
-                                GAME_OPT_WIN_POS :(38,38), #alst row, last col
-                                GAME_OPT_FOW     :False, #no fow
-                                GAME_OPT_ZOMBIES :[ #10 ez zombies
+                GAME_LVL_EZ    :{GAME_OPT_MAP_SIZE:(40,40),
+                                 GAME_OPT_WIN_POS :(38,38), #alst row, last col
+                                 GAME_OPT_FOW     :False, #no fow
+                                 GAME_OPT_ZOMBIES :[ #10 ez zombies
                                                      dict(ZOMBIE_EZ.items() +  [(GAME_OPT_ZOMBIE_NUM,10)])
-                                                  ]},
+                                                   ]},
                 #medium level options
-                GAME_LVL_MED  :{GAME_OPT_MAP_SIZE:(60,60),
-                                GAME_OPT_WIN_POS :(WIN_POS_RAND,58), #winning tile position (random, but on the last row!)
+                GAME_LVL_MED  :{GAME_OPT_MAP_SIZE:(50,50),
+                                GAME_OPT_WIN_POS :(WIN_POS_RAND,48), #winning tile position (random, but on the last row!)
                                 GAME_OPT_FOW     :True,  #fow
                                 GAME_OPT_ZOMBIES :[ #10 ez, and 10 medium zombies
                                                      dict(ZOMBIE_EZ.items() +  [(GAME_OPT_ZOMBIE_NUM,10)]),
                                                      dict(ZOMBIE_MED.items() + [(GAME_OPT_ZOMBIE_NUM,10)])
                                                   ]},
                 #hard level options
-                GAME_LVL_HARD :{GAME_OPT_MAP_SIZE:(80,80),
-                                GAME_OPT_WIN_POS :(WIN_POS_RAND,78), #winning tile position (random, but on the last row!)
-                                GAME_OPT_FOW     :True,  #fow
-                                GAME_OPT_ZOMBIES :[ #15 ez, 10 medium, and 5 hard zombies
-                                                     dict(ZOMBIE_EZ.items() +  [(GAME_OPT_ZOMBIE_NUM,15)]),
+                GAME_LVL_HARD   :{GAME_OPT_MAP_SIZE:(60,60),
+                                  GAME_OPT_WIN_POS :(WIN_POS_RAND,58), #winning tile position (random, but on the last row!)
+                                  GAME_OPT_FOW     :True,  #fow
+                                  GAME_OPT_ZOMBIES :[ #10 ez, 10 medium, and 5 hard zombies
+                                                     dict(ZOMBIE_EZ.items() +  [(GAME_OPT_ZOMBIE_NUM,10)]),
                                                      dict(ZOMBIE_MED.items() + [(GAME_OPT_ZOMBIE_NUM,10)]),
-                                                     dict(ZOMBIE_HARD.items() +[(GAME_OPT_ZOMBIE_NUM,5)])
-                                                  ]}
+                                                     dict(ZOMBIE_HARD.items() +[(GAME_OPT_ZOMBIE_NUM,10)])
+                                                    ]},
+                #extreme level options
+                GAME_LVL_EXTREME:{GAME_OPT_MAP_SIZE:(80,80),
+                                  GAME_OPT_WIN_POS :(WIN_POS_RAND,78), #winning tile position (random, but on the last row!)
+                                  GAME_OPT_FOW     :True,  #fow
+                                  GAME_OPT_ZOMBIES :[ #15 ez, 10 medium, and 5 hard zombies
+                                                     dict(ZOMBIE_EZ.items() +  [(GAME_OPT_ZOMBIE_NUM,10)]),
+                                                     dict(ZOMBIE_MED.items() + [(GAME_OPT_ZOMBIE_NUM,10)]),
+                                                     dict(ZOMBIE_HARD.items() +[(GAME_OPT_ZOMBIE_NUM,10)]),
+                                                     dict(ZOMBIE_EXTREME.items() +[(GAME_OPT_ZOMBIE_NUM,10)])
+                                                    ]}
             }
 
 #------------------------------------------------------------------------------------------------------
@@ -343,7 +359,7 @@ MENU_LVL_BTN_FREE=GAME_LVL_FREE
 MENU_LVL_BTN_EZ = GAME_LVL_EZ
 MENU_LVL_BTN_MED = GAME_LVL_MED
 MENU_LVL_BTN_HARD = GAME_LVL_HARD
-
+MENU_LVL_BTN_EXTREME = GAME_LVL_EXTREME
 
 #How window's UI constants
 #how-window buttons - button id's and button text
