@@ -122,7 +122,7 @@ STAT_SP_MULTI=15 #speed mulitplier for delay calculation
 
 
 #player constants
-PLAYER_STATS = {STAT_SP:3,STAT_STR:5,STAT_MAXBAG:5,STAT_MONEY:0,STAT_VISION:5,STAT_HP:15} #player initial stats
+PLAYER_STATS = {STAT_SP:1,STAT_STR:1,STAT_MAXBAG:5,STAT_MONEY:0,STAT_VISION:1,STAT_HP:15} #player initial stats
 PLAYER_CENTERPOS = (5,4) #players "center" position on the screen - FIX (dynamic?)
 PLAYER_STARTPOS = (1,4) #players starting position
 
@@ -149,11 +149,11 @@ ZOMBIE_STATS = "zStats"
 ZOMBIE_EZ  =    {ZOMBIE_IMG: IMG_ZOMBIE_EZ ,
                  ZOMBIE_STATS:{ZOMBIE_TYPE:ZOMBIE_TYPE_EZ,STAT_SP:0.005, STAT_STR:0.02}}
 ZOMBIE_MED =    {ZOMBIE_IMG: IMG_ZOMBIE_MED,
-                 ZOMBIE_STATS:{ZOMBIE_TYPE:ZOMBIE_TYPE_MED,STAT_SP:0.007, STAT_STR:0.03}}
+                 ZOMBIE_STATS:{ZOMBIE_TYPE:ZOMBIE_TYPE_MED,STAT_SP:0.006, STAT_STR:0.03}}
 ZOMBIE_HARD =   {ZOMBIE_IMG: IMG_ZOMBIE_HARD,
                  ZOMBIE_STATS:{ZOMBIE_TYPE:ZOMBIE_TYPE_HARD,STAT_SP:0.08,  STAT_STR:0.04}}
 ZOMBIE_EXTREME= {ZOMBIE_IMG: IMG_ZOMBIE_EXTREME,
-                 ZOMBIE_STATS:{ZOMBIE_TYPE:ZOMBIE_TYPE_EXTREME,STAT_SP:0.001,  STAT_STR:1}}
+                 ZOMBIE_STATS:{ZOMBIE_TYPE:ZOMBIE_TYPE_EXTREME,STAT_SP:0.0001,  STAT_STR:1}}
 
 #map constants
 MAP_FILE = DATA_DIR + "above.dat" #name of the aboveground map file
@@ -246,10 +246,10 @@ ATTR_NAME='name'
 #all of the available "mines" (tiles) in the game, and their associated properties
 mines={ #diggable tiles - first is blank, last is win, others are minable
         MINE_BLANK: {ATTR_NAME:"Dirt",          ATTR_CHANCE:120, ATTR_VAL:0,           ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:4}, #"blank" tile
-        2:          {ATTR_NAME:"Coal",          ATTR_CHANCE:30,  ATTR_VAL:1,           ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:5},
-        3:          {ATTR_NAME:"Amber",         ATTR_CHANCE:26,  ATTR_VAL:2,           ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:6},
-        4:          {ATTR_NAME:"Onyx",          ATTR_CHANCE:24,  ATTR_VAL:3,           ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:8},
-        5:          {ATTR_NAME:"Moonstone",     ATTR_CHANCE:20,  ATTR_VAL:4,           ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:10},
+        2:          {ATTR_NAME:"Coal",          ATTR_CHANCE:30,  ATTR_VAL:2,           ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:5},
+        3:          {ATTR_NAME:"Amber",         ATTR_CHANCE:26,  ATTR_VAL:3,           ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:6},
+        4:          {ATTR_NAME:"Onyx",          ATTR_CHANCE:24,  ATTR_VAL:4,           ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:8},
+        5:          {ATTR_NAME:"Moonstone",     ATTR_CHANCE:20,  ATTR_VAL:5,           ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:10},
         6:          {ATTR_NAME:"Copper",        ATTR_CHANCE:16,  ATTR_VAL:5,           ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:12},
         7:          {ATTR_NAME:"Topaz",         ATTR_CHANCE:12,  ATTR_VAL:6,           ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:14},
         8:          {ATTR_NAME:"Silver",        ATTR_CHANCE:9,   ATTR_VAL:7,           ATTR_TYPE:MINE_DIGGABLE, ATTR_HITS:15},
