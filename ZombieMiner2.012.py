@@ -1,9 +1,9 @@
 #Filename: ZombieMiner2.py
 #Author: Ryan Blakely
 #Last Modified By: Ryan Blakely
-#Last Modified: Aug 5th 2013 
+#Last Modified: Aug 16th 2013 
 #Description: A Simple mining game in which the player must collect mines and avoid zombies.
-#Version: 2.0!
+#Version: 3.0!
 
 
 """
@@ -126,7 +126,10 @@ Revision History:
     - to do:FIX CONSTANTS FOR REAL GAME!!!
             BETTER AI!!!
     - minor sound bug fix...for some reason Sound.get_raw() doesn't exist anymore?? maybe I had on older pygame installed
-      ... at any rate, replaced with get_length(). This could pose problems if the lengths match,but that seems unlikely for now :)
+      ... at any rate, replaced with get_length(). This could pose problems if the lengths match,but that seems unlikely for now :
+      
+012  Aug 16th, 2013
+    - officially version 3.0. changing to zombieminer3.py
 """
 
 
@@ -705,27 +708,23 @@ def handleZombies(screen,tilemap,tileset,zombies,player,deathSet):
             if(zombie.stats[ZOMBIE_TYPE]==ZOMBIE_TYPE_EXTREME):
                 player.stats[STAT_MONEY]=0 
                 player.clearBag() #steal players bag
-                
                 teleportRandom(screen,player,tilemap,tileset) #teleport player randomly
                          
             #if its a hard zombie, take hp and teleport random
             elif(zombie.stats[ZOMBIE_TYPE]==ZOMBIE_TYPE_HARD):
                 #take an additonal life
                 player.subStat(STAT_HP,1)
-                
                 teleportRandom(screen,player,tilemap,tileset) #teleport player randomly
             
             #if its a mediun zombie, steal the players cash and bag
             elif(zombie.stats[ZOMBIE_TYPE]==ZOMBIE_TYPE_MED):
                 player.stats[STAT_MONEY]=0
                 player.clearBag() #steal players bag
-
                 teleportHome(screen,player,tilemap,tileset) #send player home
             
             #if its an easy zombie, steal the bag and send player
             elif (zombie.stats[ZOMBIE_TYPE]==ZOMBIE_TYPE_EZ):
                 player.clearBag() #steal players bag
-                
                 teleportHome(screen,player,tilemap,tileset) #send player home
             
             #if players hp is 0 after all of this, return game over state

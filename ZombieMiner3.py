@@ -1,21 +1,21 @@
-#Filename: ZombieMiner2.py
+#Filename: ZombieMiner3.py
 #Author: Ryan Blakely
 #Last Modified By: Ryan Blakely
-#Last Modified: Aug 5th 2013 
+#Last Modified: Aug 16th 2013 
 #Description: A Simple mining game in which the player must collect mines and avoid zombies.
-#Version: 2.0!
+#Version: 3.0!
 
 
 """
 Revision History:
- 001  July 29,2013
+2.001 July 29,2013
       - Original game 
       - fow testing (drawFOW())
       - handlePlayer/Zombies (moved code from game loop)
       - testing various zombie collision logic change (clearing bag, resetting player pos, etc)
       - added resetPlayer
       
- 002  July 30,2013
+2.002  July 30,2013
       - added a second "type" of zombie...employs same logic and stats
       - added centerpos constant for player instead of using startpos in scrollmap
       - handleZombie changed to handle different zombie types
@@ -24,7 +24,7 @@ Revision History:
       - fixed resetPlayer bug where he could keep up after being reset (resets stepDist and act now)
       - "pixel perfect" (uses exact position) vs getPos which uses tilebased posit
       
- 003  July 30, 2013
+2.003  July 30, 2013
       - Finally fixed that stupid bug where if a zombie was dying it would freeze up (seemingly) random other zombies
         ... the "continue" line in handleZombies, instead of having break there.
       - added title to menu.png!
@@ -35,7 +35,7 @@ Revision History:
       - changed up the fonts size and styles...gui doesnt entirely line up anymore, but im going to save that for the next iteration
       - fixed startTime to display minutes and seconds when games done
  
- 004  July 30, 2013
+2.004  July 30, 2013
       - ...fixed dates. everything was june lol
       - added a "fading vision" to the FOW drawing (drawVision)
       - finished off FOW w/ player vision stat
@@ -45,7 +45,7 @@ Revision History:
       - implemented multiple levels of difficulty & menu for it
       - implemented menu-to-menu logic (simple change menuWin)
 
- 005  July 31st, 2013
+2.005  July 31st, 2013
       - slight gui changes - bolded stat font and changed the title font
       - fixed slight bug where it wouldnt update the stat window if cash zombies hit him
       - fixed bug where vision could still be bought at the store, even though there is no FOV
@@ -54,23 +54,23 @@ Revision History:
       - fixed a bug where nearby cash zombies would freeze if one was touching me
        ...the line returnWin = WIN_STAT fixed it, instead of instantly returning the window
        
-006  July 31st, 2013
+2.006  July 31st, 2013
       - changed setWinningTile to set handle a "random placement" flag. also setup appropriate constants
       
-006  Aug 1st, 2013
+2.006  Aug 1st, 2013
       - added game options dict to game() instead of multi-variables
       - massive changes in gameConstants for zombie stats and game options to streamline different level creation w/ different zombies
        ..also some changes to how createZombies works (and how its called), and also the level-menu logic
        ..also some changes to setWinningTile to accept a given tile position instead of using the constant
       - added dmg stat to miners based on strength to better regulate hit dmg
       
-006  Aug 2nd, 2013
+2.006  Aug 2nd, 2013
      - made some changes to Window - no longer uses a drawPos, simply self.pos
      - made some changes to labels to handle multi-line text
      ...this included major change to textImage in gameFunctions to handle multi-line text, since pygame doesnt natively support it
      - first instruction window essentially complete. other windows should be easy with the above changes :D. done 006!
      
-007  Aug 2nd, 2013
+2.007  Aug 2nd, 2013
      - templates for all of the instructions windows complete
      - completely done main instruction window and mechanics window
      - moved tileset up to the top as a constant as its needed for both game and menu (instruction screen)
@@ -84,7 +84,7 @@ Revision History:
      - mines window complete! only zombies left
      - finished the zombies screen! yay! all instructions screens are complete
  
-008  Aug 2nd, 2013
+2.008  Aug 2nd, 2013
      - added "best time" functionality
      ...added 3 functions (bestTime,writeTimeFile,readTimeFile) and a few constants to maintain a "Best Times" (aka high score) file
      ...implemented logic to game loop to write best times
@@ -92,22 +92,55 @@ Revision History:
      - moved times.dat (best times file) and above.dat (aboveground map file) to data folder
      - all menu's now complete!
      
-008  Aug 5th, 2013
+2.009  Aug 5th, 2013
     - added some missing comments! also minor changes to tweak the games difficulty/fun-ness, mainly in Miners updateStats and to game constants
-    - added in some basic sounds (hitting, breaking, shopping) and also added necessary constants
-    - lots of final testing, some minor bug fixes, and more tinkering with the constants
+    - added in some basic sounds (hitting, breaking, shopping) added necessary constants
     - last minute fix...have to check for stat type before multuiplying zombie stats based on random pos
+    
+2.010  Aug 14th, 2013
+    - serious changes to scrollMap...i dont know what i was even thinking before. function requires way less parameters and totally different logic
+      also had to make a small change in gameObjects to TileMap.move so self.shift isnt cumulatative
+    - planning to add a "ghost"-zombie that can move through diggable tiles. added to tryAction an "ignore tiles - just move" flag for the ghost
+    - made a tilemap.randomPos to generate random positions for the zombie creation, teleporting, and winning tile (done). in the midst of integrating it throughout - almost done!
+    - teleport() now takes the tilemap and tileset to be able to replace tiles if they are diggable...so people dont get placed ontop of tiles
+    - fixed tilemap.randomPos to work better, regenerating positions until its a "good" one (not blocked, not winning, after start pos)
+      ...as such, startPos isn't really needded but i will leave it there for future mods, just incase. i foresee it being useful.
+    - added an inRange() function and a constant ZOMBIE_AI_RANGE, as well as some new logic in handleZombies to try and curb zombie trains.
+      ...zombies should only chase after the player if they are within range of the player.
+    - added addtional constants for the "extreme" difficulty with ghost-zombies
+    - had to make a change to how tilemap.move handles maximum bounds - it was bugged after the change to scrollMap
+    - 1 last minor tweak to tilemap.randomPos...was some bad logic. Also commented out "inRange" in handleZombies for testing. will uncomment on next iteration
+
+2.011  Aug 15th, 2013
+    - more mods to randomPos (more bad logic. and where there should be an or). was placing zombies specifically on blocked tiles isntead of avoiding them:P
+    - more changes to how scrollMap tilemap.move works (+1 param) so there is no clipping at maximum map edges
+    - renamed "strength" to "power" in the GUI to conserve space. redid some of createStatWin to show player Hp and added an HP constant
+    - zombies now minus HP from player, and player dies when HP=0. HP is fully implemented at this point
+    - major sound updates. added several constants and 2 functions to gameFunctions to play sounds and control (fade in and out) ingame music
+      ...also added several sounds at new events and implemented the entire "music" system for the game
+      
+2.012  Aug 15th, 2013
+    - splash screen done. added a function (splash()) with a delay to display it for
+    - revamped zombies and zombie-type logic (different actions when hitting player)
+    - redid a bunch of constants and spacing for the windows to add new ghost zombie (particularly HOW_ZOMBIES_WIN)
+    - to do:FIX CONSTANTS FOR REAL GAME!!!
+            BETTER AI!!!
+    - minor sound bug fix...for some reason Sound.get_raw() doesn't exist anymore?? maybe I had on older pygame installed
+      ... at any rate, replaced with get_length(). This could pose problems if the lengths match,but that seems unlikely for now :
+      
+3.012  Aug 16th, 2013
+    - officially version 3.0. changing to zombieminer3.py
+    - FULL SCREEEEEEN!!!!!
 """
 
 
 #import needed modules for pygame
-import pygame, sys, random
+import pygame, sys, random, math
 from pygame.locals import *
 
 #initialize pygame, fonts, and the sound mixer
 pygame.init()
 pygame.font.init()
-#pygame.mixer.pre_init(frequency=22050,size=-16,channels=4)
 pygame.mixer.init()
 
 #import constants, functions, and objects needed for the game
@@ -143,29 +176,30 @@ SHOP_WIN=Window((ALIGN_CENTER,5),WINSET,len(SHOP_LBLS),SHOP_TITLE,SHOP_LBLS,SHOP
 
 
 # ui elements for the main menu buttons
-MENU_BTNS=[Button(MENU_BTN_PLAY,    (ALIGN_CENTER,50),  BTNSET,textImage(MENU_BTN_PLAY,BTN_FONT,WIN_FONT_COLOR)),
-           Button(MENU_BTN_HOW,     (ALIGN_CENTER,85),  BTNSET,textImage(MENU_BTN_HOW,BTN_FONT,WIN_FONT_COLOR)),
-           Button(MENU_BTN_TIMES,   (ALIGN_CENTER,120),  BTNSET,textImage(MENU_BTN_TIMES,BTN_FONT,WIN_FONT_COLOR)),
-           Button(MENU_BTN_EXIT,    (ALIGN_CENTER,155), BTNSET,textImage(MENU_BTN_EXIT,BTN_FONT,WIN_FONT_COLOR))]
+MENU_BTNS=[Button(MENU_BTN_PLAY,    (ALIGN_CENTER,50),  BTNSET,textImage(MENU_BTN_PLAY, BTN_FONT,WIN_FONT_COLOR)),
+           Button(MENU_BTN_HOW,     (ALIGN_CENTER,85),  BTNSET,textImage(MENU_BTN_HOW,  BTN_FONT,WIN_FONT_COLOR)),
+           Button(MENU_BTN_TIMES,   (ALIGN_CENTER,120), BTNSET,textImage(MENU_BTN_TIMES,BTN_FONT,WIN_FONT_COLOR)),
+           Button(MENU_BTN_EXIT,    (ALIGN_CENTER,155), BTNSET,textImage(MENU_BTN_EXIT, BTN_FONT,WIN_FONT_COLOR))]
 #window for the main menu  
 MENU_WIN=Window((ALIGN_CENTER,ALIGN_CENTER),WINSET,len(MENU_BTNS)+1,MENU_TITLE,None,MENU_BTNS)
 
 # ui elements for the level select menu
-LVL_BTNS=[Button(MENU_LVL_BTN_FREE, (ALIGN_CENTER,55),  BTNSET,textImage(MENU_LVL_BTN_FREE,BTN_FONT,WIN_FONT_COLOR)),
-          Button(MENU_LVL_BTN_EZ,   (ALIGN_CENTER,85),  BTNSET,textImage(MENU_LVL_BTN_EZ,BTN_FONT,WIN_FONT_COLOR)),
-          Button(MENU_LVL_BTN_MED,  (ALIGN_CENTER,115), BTNSET,textImage(MENU_LVL_BTN_MED,BTN_FONT,WIN_FONT_COLOR)),
-          Button(MENU_LVL_BTN_HARD, (ALIGN_CENTER,145), BTNSET,textImage(MENU_LVL_BTN_HARD,BTN_FONT,WIN_FONT_COLOR)),
-          Button(MENU_BTN,          (ALIGN_CENTER,185), BTNSET,textImage(MENU_BTN,BTN_FONT,WIN_FONT_COLOR))]
+LVL_BTNS=[Button(MENU_LVL_BTN_FREE,     (ALIGN_CENTER,55),  BTNSET,textImage(MENU_LVL_BTN_FREE,   BTN_FONT,WIN_FONT_COLOR)),
+          Button(MENU_LVL_BTN_EZ,       (ALIGN_CENTER,90),  BTNSET,textImage(MENU_LVL_BTN_EZ,     BTN_FONT,WIN_FONT_COLOR)),
+          Button(MENU_LVL_BTN_MED,      (ALIGN_CENTER,125), BTNSET,textImage(MENU_LVL_BTN_MED,    BTN_FONT,WIN_FONT_COLOR)),
+          Button(MENU_LVL_BTN_HARD,     (ALIGN_CENTER,160), BTNSET,textImage(MENU_LVL_BTN_HARD,   BTN_FONT,WIN_FONT_COLOR)),
+          Button(MENU_LVL_BTN_EXTREME,  (ALIGN_CENTER,195), BTNSET,textImage(MENU_LVL_BTN_EXTREME,BTN_FONT,WIN_FONT_COLOR)),
+          Button(MENU_BTN,              (ALIGN_CENTER,235), BTNSET,textImage(MENU_BTN,            BTN_FONT,WIN_FONT_COLOR))]
 #window for level/difficulty select menu
-LVL_WIN = Window((ALIGN_CENTER,ALIGN_CENTER),WINSET,len(LVL_BTNS)+1,MENU_LVL_TITLE,None,LVL_BTNS)
+LVL_WIN = Window((ALIGN_CENTER,ALIGN_CENTER),WINSET,len(LVL_BTNS)+2,MENU_LVL_TITLE,None,LVL_BTNS)
 
 
 #Instruction windows
 #-------------------------------------------------------------------------------
 # ui elements for the main instruction windows
 HOW_LBLS=[Label((ALIGN_CENTER,ALIGN_CENTER),HOW_TXT,WIN_FONT,WIN_FONT_COLOR,LBL_LINE_DLIM,True)]
-HOW_BTNS=[Button(HOW_BTN_MECH,  (40,ALIGN_BOTTOM),  BTNSET,textImage(HOW_BTN_MECH,BTN_FONT,WIN_FONT_COLOR)),
-          Button(MENU_BTN,      (220,ALIGN_BOTTOM), BTNSET,textImage(MENU_BTN,BTN_FONT,WIN_FONT_COLOR))]
+HOW_BTNS=[Button(HOW_BTN_MECH,  (40,ALIGN_BOTTOM),  BTNSET,textImage(HOW_BTN_MECH,  BTN_FONT,WIN_FONT_COLOR)),
+          Button(MENU_BTN,      (220,ALIGN_BOTTOM), BTNSET,textImage(MENU_BTN,      BTN_FONT,WIN_FONT_COLOR))]
 #window for main instructions window
 HOW_WIN=Window((ALIGN_CENTER,ALIGN_CENTER),
                WINSET,len(HOW_LBLS[0].text.split(LBL_LINE_DLIM))+1,HOW_TITLE,HOW_LBLS,HOW_BTNS)
@@ -174,23 +208,25 @@ HOW_WIN=Window((ALIGN_CENTER,ALIGN_CENTER),
 # ui elements for the game mechanics window
 HOW_MECH_LBLS=[Label((ALIGN_CENTER,ALIGN_CENTER),HOW_MECH_TXT,WIN_FONT,WIN_FONT_COLOR,LBL_LINE_DLIM,True)]
 HOW_MECH_BTNS=[Button(HOW_BTN_ZOMBIES,  (47,ALIGN_BOTTOM),  BTNSET,textImage(HOW_BTN_ZOMBIES,BTN_FONT,WIN_FONT_COLOR)),
-               Button(MENU_BTN,         (220,ALIGN_BOTTOM), BTNSET,textImage(MENU_BTN,BTN_FONT,WIN_FONT_COLOR))]
+               Button(MENU_BTN,         (220,ALIGN_BOTTOM), BTNSET,textImage(MENU_BTN,       BTN_FONT,WIN_FONT_COLOR))]
 #window for game mechanics
 HOW_MECH_WIN=Window((ALIGN_CENTER,ALIGN_CENTER),
                     WINSET,len(HOW_MECH_LBLS[0].text.split(LBL_LINE_DLIM))+1,HOW_MECH_TITLE,HOW_MECH_LBLS,HOW_MECH_BTNS)
 
 # ui elements for the zombies window
-HOW_ZOMBIE_IMGS= [Drawable((50,65),ImageSet(IMG_ZOMBIE_EZ,   SPRITE_SIZE,TILE_TRANSCOLOR)[0]),
-                  Drawable((50,175),ImageSet(IMG_ZOMBIE_MED,  SPRITE_SIZE,TILE_TRANSCOLOR)[0]),
-                  Drawable((50,285),ImageSet(IMG_ZOMBIE_HARD, SPRITE_SIZE,TILE_TRANSCOLOR)[0])]       
+HOW_ZOMBIE_IMGS= [Drawable((50,45),ImageSet(IMG_ZOMBIE_EZ,   SPRITE_SIZE,TILE_TRANSCOLOR)[0]),
+                  Drawable((50,130),ImageSet(IMG_ZOMBIE_MED,  SPRITE_SIZE,TILE_TRANSCOLOR)[0]),
+                  Drawable((50,215),ImageSet(IMG_ZOMBIE_HARD, SPRITE_SIZE,TILE_TRANSCOLOR)[0]),
+                  Drawable((50,300),ImageSet(IMG_ZOMBIE_EXTREME, SPRITE_SIZE,TILE_TRANSCOLOR)[0])]       
 HOW_ZOMBIES_LBLS=[Label((100,45), HOW_ZOMBIES_EZ_TXT,     WIN_FONT,WIN_FONT_COLOR,LBL_LINE_DLIM),
-                  Label((100,155),HOW_ZOMBIES_MED_TXT,    WIN_FONT,WIN_FONT_COLOR,LBL_LINE_DLIM),
-                  Label((100,265),HOW_ZOMBIES_HARD_TXT,   WIN_FONT,WIN_FONT_COLOR,LBL_LINE_DLIM)]
-HOW_ZOMBIES_BTNS=[Button(HOW_BTN_MINES, (40,ALIGN_BOTTOM),  BTNSET,textImage(HOW_BTN_MINES,BTN_FONT,WIN_FONT_COLOR)),
-                  Button(MENU_BTN,      (220,ALIGN_BOTTOM), BTNSET,textImage(MENU_BTN,BTN_FONT,WIN_FONT_COLOR))]
+                  Label((100,130),HOW_ZOMBIES_MED_TXT,    WIN_FONT,WIN_FONT_COLOR,LBL_LINE_DLIM),
+                  Label((100,215),HOW_ZOMBIES_HARD_TXT,   WIN_FONT,WIN_FONT_COLOR,LBL_LINE_DLIM),
+                  Label((100,300),HOW_ZOMBIES_EXTREME_TXT,WIN_FONT,WIN_FONT_COLOR,LBL_LINE_DLIM)]
+HOW_ZOMBIES_BTNS=[Button(HOW_BTN_MINES, (40,ALIGN_BOTTOM),  BTNSET,textImage(HOW_BTN_MINES, BTN_FONT,WIN_FONT_COLOR)),
+                  Button(MENU_BTN,      (220,ALIGN_BOTTOM), BTNSET,textImage(MENU_BTN,      BTN_FONT,WIN_FONT_COLOR))]
 #window for zombies descriptions
 HOW_ZOMBIES_WIN =Window((ALIGN_CENTER,ALIGN_CENTER),
-                        WINSET,len(HOW_ZOMBIES_LBLS[0].text.split(LBL_LINE_DLIM))+10,HOW_ZOMBIES_TITLE,HOW_ZOMBIES_LBLS,HOW_ZOMBIES_BTNS,HOW_ZOMBIE_IMGS)
+                        WINSET,len(HOW_ZOMBIES_LBLS[0].text.split(LBL_LINE_DLIM))+12,HOW_ZOMBIES_TITLE,HOW_ZOMBIES_LBLS,HOW_ZOMBIES_BTNS,HOW_ZOMBIE_IMGS)
 
 
 #=======================================================================================================================
@@ -202,14 +238,16 @@ HOW_ZOMBIES_WIN =Window((ALIGN_CENTER,ALIGN_CENTER),
 #returns - the statistics window
 def createStatWin(player):
     #ui elements for stats window
-    statLbls = [Label((50,5),"Strength : " + str(player.stats[STAT_STR]),WIN_STAT_FONT,WIN_FONT_COLOR),
-                Label((50,25),"Speed       : " + str(player.stats[STAT_SP]),WIN_STAT_FONT,WIN_FONT_COLOR),
-                Label((230,5), "Bag    : " + str(len(player.stats[STAT_BAG])) + " / " + str(player.stats[STAT_MAXBAG]),
+    statImgs= [Drawable((30,5),pygame.transform.scale(ImageSet(IMG_PLAYER,SPRITE_SIZE,TILE_TRANSCOLOR)[0],(40,40)))] #shrinks the players image to fit the window
+    statLbls = [Label((65,15),"x " + str(player.stats[STAT_HP]),WIN_STAT_FONT,WIN_FONT_COLOR),
+                Label((120,5),"Power: " + str(player.stats[STAT_STR]),WIN_STAT_FONT,WIN_FONT_COLOR),
+                Label((120,25),"Speed : " + str(player.stats[STAT_SP]),WIN_STAT_FONT,WIN_FONT_COLOR),
+                Label((250,5), "Bag  : " + str(len(player.stats[STAT_BAG])) + " / " + str(player.stats[STAT_MAXBAG]),
                       WIN_STAT_FONT,WIN_FONT_COLOR),
-                Label((230,25),"Cash  : " + str(player.stats[STAT_MONEY]),WIN_STAT_FONT,WIN_FONT_COLOR)]
+                Label((250,25),"Cash: " + str(player.stats[STAT_MONEY]),WIN_STAT_FONT,WIN_FONT_COLOR)]
     
     #create the stat window
-    statWin = Window((ALIGN_CENTER,ALIGN_BOTTOM),WINSET,0,None,statLbls)
+    statWin = Window((ALIGN_CENTER,ALIGN_BOTTOM),WINSET,0,None,statLbls,None,statImgs)
     
     return statWin
 
@@ -331,7 +369,7 @@ def writeTimesFile(times):
     #open the file and write each time to it
     timeFile=open(TIME_FILE,'w+')
     for lvl in times.keys():
-        timeFile.write(lvl + TIME_DLIM + str(times[lvl]))
+        timeFile.write(lvl + TIME_DLIM + str(times[lvl]) + "\n")
 
 #========================================================================================
 #                         GAME SETUP FUNCTIONS
@@ -348,43 +386,50 @@ def writeTimesFile(times):
 def createZombies(zData,tilemap,tileset,spriteTemplate,target,startPos=(0,0)):
     zombieImg=loadImage(zData[ZOMBIE_IMG],TILE_TRANSCOLOR) #load spriteset image for zombies
     zombieAI = AI(target) #setup a simple AI that targets the player
-    
+
     zombies=list() #holder list for zombies
     
     #create given # of zombies
     for z in range(0,zData[GAME_OPT_ZOMBIE_NUM]):
-        #randomly choose a position for the zombie to start -- goes to width -1 and height - 1, to account for border
-        randomPos = (random.randint(startPos[X],tilemap.getSize()[X]-2),random.randint(startPos[Y],tilemap.getSize()[Y]-2))
+        #randomly choose a position for the zombie to start at
+        randomPos = tilemap.randomPos(startPos)
         
         zombieStats = zData[ZOMBIE_STATS].copy() #make a copy of the stats soas not to effect other zombies
         
         #mod base stats based on the random position - further away zombies will be harder/faster
         for stat in zombieStats.keys():
             if(stat!=ZOMBIE_TYPE):
-                zombieStats[stat]=zombieStats[stat]*(randomPos[X]+randomPos[Y])/2
+                zombieStats[stat]=zombieStats[stat]*(randomPos[X]+randomPos[Y])/3
         
         #create a new zombie and add it to the list of zombies
         zombie = Mob(randomPos,SpriteSet(zombieImg,SPRITE_SIZE,spriteTemplate),zombieStats,zombieAI)
         zombies.append(zombie)
         
-        #change the tile to be a "broken" one at the randomly chosen position
+        #change the tile to be a "dug" one at the randomly chosen position
         tilemap.getTile(randomPos).change(mines[MINE_DUG],tileset[MINE_DUG])
     
     return zombies
+    
 
-
-#sets a particular tile on the tilemap to be the winning tile
+#sets a particular tile on the tilemap to be the winning tile.
+#NOTE!! ONLY EVER CALL THIS FUNCTION ONCE! otherwise redo tilemap.randomPos logic
 # pos (tuple) - the position to set the winning tile to
 # tilemap (TileMap) - tilemap to place the mine on
 # tileset (TileSet) - the tileset to choose the mine from
-def setWinningTile(pos,tilemap,tileset):
+# startPos (tuple) - the start position on the tilemap to start allowing zombies (wont allow placement < startPos), e.g. the aboveground area
+def setWinningTile(pos,tilemap,tileset,startPos=(0,0)):
     (tileX,tileY)=pos
     
+    #generate a random position incase its needed
+    randPos=tilemap.randomPos(startPos)
+    
+    #if either of the positions is set w/ the random position flag, randomize its position!
     if(pos[X]==WIN_POS_RAND):
-        tileX=random.randint(1,tilemap.size[X]-1)
+        tileX=randPos[X]
     if(pos[Y]==WIN_POS_RAND):
-        tileY=random.randint(1,tilemap.size[Y]-1)
+        tileY=randPos[Y]
         
+    #replace the tile with the winning tile
     tilemap.getTile((tileX,tileY)).change(mines[MINE_WIN],tileset[MINE_WIN])
 
 
@@ -393,12 +438,13 @@ def setWinningTile(pos,tilemap,tileset):
 #========================================================================================
 
 #attempts to perform an action for a Miner in a particular direction
-#screen (pygame Surface) - the screen for the game
-#miner (Miner) - the acting miner
-#direction (int) - the direction being acted in
-#tilemap (TileMap) - the tilemap the action is taking place on
+# screen (pygame Surface) - the screen for the game
+# miner (Miner) - the acting miner
+# direction (int) - the direction being acted in
+# tilemap (TileMap) - the tilemap the action is taking place on
+# ignoreType (bool) - if true, we dont care what the next type of tile is - just always move
 #returns - the next tile in the specified direction from the miner on the tilemap, if it can be acted on. otherwise dont return anything
-def tryAction(screen,miner,direction,tilemap):
+def tryAction(screen,miner,direction,tilemap,ignoreType=False):
     #get the direction vector for the desired action
     if(direction==DIR_RIGHT):
         move=(1,0)
@@ -413,46 +459,40 @@ def tryAction(screen,miner,direction,tilemap):
     nextPos = (miner.getPos()[X]+move[X],miner.getPos()[Y]+move[Y])
     
     #make sure the next position to be acted towards is within the screens dimensions
-    if(nextPos[X]>=0 and nextPos[X]<tilemap.getSize()[X] and
-       nextPos[Y]>=0 and nextPos[Y]<tilemap.getSize()[Y]):
+    if(nextPos[X]>=0 and nextPos[X]<tilemap.size[X] and
+       nextPos[Y]>=0 and nextPos[Y]<tilemap.size[Y]):
         nextTile = tilemap.getTile(nextPos) #get the next tile in the chosen direction
         
-        #if new direction next tileis blocked...
-        if(nextTile.attributes['type']==MINE_BLOCK_FULL):
-            return None #can't walk in that direction
-        
-        #if new direction is up, but up is blocked...
-        elif (direction==DIR_UP and tilemap.getTile(nextPos).attributes['type']==MINE_BLOCK_UP):
-            return None #can't act in that direction
-        
-        #if the new direction is diggable
-        elif (nextTile.attributes['type']==MINE_DIGGABLE):
-            if(miner.doAction(ACT_DIG)): #dig it and return the tile being dug
-                return nextTile
-        
-        else: #if the new direction is free and the player is trying to move
+        #if we dont care what the next type of tile is, just move (for ghosts)
+        if (ignoreType):
             if(miner.doAction(ACT_WALK,(move[X]*tilemap.tileSize[X],move[Y]*tilemap.tileSize[Y]))):
                 return nextTile
+        else:
+            #if new direction next tileis blocked...
+            if(nextTile.attributes[ATTR_TYPE]==MINE_BLOCK_FULL):
+                return None #can't walk in that direction
+            
+            #if new direction is up, but up is blocked...
+            elif (direction==DIR_UP and tilemap.getTile(nextPos).attributes[ATTR_TYPE]==MINE_BLOCK_UP):
+                return None #can't act in that direction
+            
+            #if the new direction is diggable
+            elif (nextTile.attributes[ATTR_TYPE]==MINE_DIGGABLE):
+                if(miner.doAction(ACT_DIG)): #dig it and return the tile being dug
+                    return nextTile
+            
+            else: #if the new direction is free and the player is trying to move
+                if(miner.doAction(ACT_WALK,(move[X]*tilemap.tileSize[X],move[Y]*tilemap.tileSize[Y]))):
+                    return nextTile
 
-# scrolls the map if necessary based on the players position and movement vector
+#scrolls the map if necessary based on the players position
 # screen (pygame Surface) - screen to move the map on
 # player (Miner) - the player (needed for position)
 # tilemap (TileMap) - the tilemap to scroll
-# moveVect (tuple) - the scroll vector
-def scrollMap(screen,player,tilemap,moveVect):
-    #if the player has reached an edge of the map on the x-axis, dont move the map in that direction anymore
-    if (player.getPos()[X]<PLAYER_CENTERPOS[X]
-        or player.getPos()[X]>tilemap.getSize()[X]-PLAYER_CENTERPOS[X]-1
-        or player.getPos()[X]==PLAYER_CENTERPOS[X] and player.dir==DIR_RIGHT):
-        moveVect=(0,moveVect[Y])
-    
-    #if the player has reached an edge of the map on the y-axis, dont move the map in that direction anymore (FIXED)
-    if (player.getPos()[Y]<PLAYER_CENTERPOS[Y]
-        or player.getPos()[Y]>tilemap.getSize()[Y]-PLAYER_CENTERPOS[Y]-1
-        or player.getPos()[Y]==PLAYER_CENTERPOS[Y] and player.dir==DIR_DOWN):
-        moveVect=(moveVect[X],0)
-    
-    tilemap.move((-moveVect[X],-moveVect[Y]),(0,0),screen.get_size())
+def scrollMap(screen,player,tilemap):
+    #get absolute position to shift map to (account for starting offset), then shift the map
+    mapPos = ((PLAYER_CENTERPOS[X]*tilemap.tileSize[X]-player.pos[X]),(PLAYER_CENTERPOS[Y]*tilemap.tileSize[Y]-player.pos[Y]))
+    tilemap.move(mapPos,MAP_OVERSCROLL,(0,0),screen.get_size())
 
 
 #========================================================================================
@@ -491,8 +531,8 @@ def drawVision(fowImg,tilemap,player):
         
         #draw the players immediate vision (alpha=0)
         pygame.draw.circle(fowImg,Color(0,0,0,alpha),
-                           (vision[X]+tilemap.shift[X],
-                            vision[Y]+tilemap.shift[Y]),
+                           (int(vision[X]+tilemap.shift[X]),
+                            int(vision[Y]+tilemap.shift[Y])),
                            int(visionRadius))
         
         alpha-=FADE_STEP_ALPHA
@@ -539,13 +579,12 @@ def handlePlayer(screen,tilemap,tileset,player):
     
     #if the finished act is a tuple (e.g. a move vector)
     if (type(playerAct) is tuple):
-        moveVect = playerAct
         #scroll the map the distance that the player has moved
-        scrollMap(screen,player,tilemap,moveVect)
+        scrollMap(screen,player,tilemap)
         
     # if the player is done hitting
     elif (playerAct==ACT_DIG):
-        pygame.mixer.Sound('sounds/hit.wav').play() #play the hitting sound
+        playSound(SND_HIT) #play the hitting sound
         
         #hit the tile
         pHitTile = player.actTile
@@ -553,8 +592,7 @@ def handlePlayer(screen,tilemap,tileset,player):
         
         #if the hit returned a result (broke?)
         if(pHitResult!=None):
-            pygame.mixer.Sound('sounds/break.wav').play() #play the breaking sound
-            
+            playSound(SND_BREAK) #play the breaking sound
             pHitTile.change(mines[MINE_DUG],tileset[MINE_DUG]) #set the dug-out tiles attributes and image to "dug" tile
             
             #if the player just broke the winning mine, show the winning game screen
@@ -564,7 +602,7 @@ def handlePlayer(screen,tilemap,tileset,player):
             else: #otherwise, if it was a normal tile...
                 #try to add the tiles value to the players bag, if it was worth something...
                 if(player.addToBag(pHitResult)): 
-                    pygame.mixer.Sound('sounds/mineral.wav').play() #play money sounds!
+                    pygame.mixer.Sound(SND_MINE).play() #play money sounds!
                     return WIN_STAT #create a new stat window (basically an update, but i never wrote an update)
     
     return None
@@ -574,26 +612,78 @@ def handlePlayer(screen,tilemap,tileset,player):
 #                     ZOMBIE-ONLY FUNCTIONS
 #========================================================================================
 
-#resets the player to his original state in the game (not stats though!)
-# player (Miner) - the player to reset
-def resetPlayer(player):
-    player.setPos(PLAYER_STARTPOS)
-    #player.lastMod+= 3000 #FIX?? delay after reset
-    player.frame=0
-    player.act=ACT_NONE
-    player.stepDist=(0,0)
-    player.actTile=None
-    player.updateFrame()
+#Teleports a miner (currently just the player) to a specified location on the map and cancels any actions
+# miner (Miner) - the miner to teleport
+# pos (tuple) - the position to teleport to
+# tilemap (TileMap) - the tilemap, to check for any tiles we may have been placed on
+def teleport(miner,pos,tilemap,tileset):
+    #move the miner
+    miner.setPos(pos)
+    
+    #if the tilemap is a "diggable" tile (this *shouldn't* ever result in people being placed on blocked tiles due to preprocessing)
+    if(tilemap.getTile(pos).attributes[ATTR_TYPE]==MINE_DIGGABLE):
+        #replace the tile in that pos with a "dug" tile
+        tilemap.getTile(pos).change(mines[MINE_DUG],tileset[MINE_DUG]) 
+        
+    #cancel any action
+    miner.frame=0
+    miner.act=ACT_NONE
+    miner.stepDist=(0,0)
+    miner.actTile=None
+    miner.updateFrame()
 
+#wrapper function for teleporting the player home & scrolling the tilemap to center on him
+# screen - screen being drawn to
+# player - player to teleport
+# tilemap - the tilemap the player is being teleported on
+# tileset - the game tilset, incase we need to change any tiles
+def teleportHome(screen,player,tilemap,tileset):
+    #send home
+    teleport(player,PLAYER_STARTPOS,tilemap,tileset) #teleport player home
+    tilemap.shift=(0,0) #bug fix for overscrolling
+    scrollMap(screen,player,tilemap) # center map on player
+
+#wrapper function for teleporting the player to a random pos & scrolling the tilemap to center on him
+# screen - screen being drawn to
+# player - player to teleport
+# tilemap - the tilemap the player is being teleported on
+# tileset - the game tilset, incase we need to change any tiles
+def teleportRandom(screen,player,tilemap,tileset):
+    #get random pos to teleport player to (will only pick valid, diggable, non-winning tiles)
+    randPos=tilemap.randomPos()
+    #teleport player to that pos & scroll map
+    teleport(player,randPos,tilemap,tileset)
+    scrollMap(screen,player,tilemap) # center map on player
+
+#checks if two miners are "within range" of eachother
+# miner1 (Miner) - the first miner
+# miner2 (Miner) - the second miner
+# rangeDist (int) - the range threshold to qualify as "in" or "out" of range 
+#returns - true if in range of eachother, false otherwise
+def inRange(miner1,miner2,rangeDist):
+    #get the rise and run difference between the miners positions
+    diffX=miner1.getPos()[X]-miner2.getPos()[X]
+    diffY=miner1.getPos()[Y]-miner2.getPos()[Y]
+    
+    #pythagorean theorum to get distance between two miners positions
+    dist=math.sqrt(math.pow(diffX,2)+math.pow(diffY,2))
+    
+    #if its within range, return true. otherwise false
+    if (dist<rangeDist):
+        return True
+    else:
+        return False
+    
+    
 #handles the zombie-updating part of the game loop. checks for any performs any zombie actions and processes the results
 # screen (display) - the screen being drawn to
 # tilemap (TileMap) - the tilemap being used currently
 # tileset (TileSet) - the tileset being used currently
 # zombies (list) - a list of all of the zombies to handle
 # player (Miner) - the player that the zombies are after
-# fireSet (SpriteSet...more like an ImageSet) - the spriteset for the fire that kills the zombies
+# deathSet (SpriteSet...more like an ImageSet) - the spriteset for the fire that kills the zombies (zombies death)
 #returns - None or a Window obj if the game was won or the players stats need updating
-def handleZombies(screen,tilemap,tileset,zombies,player,fireSet):
+def handleZombies(screen,tilemap,tileset,zombies,player,deathSet):
     returnWin=None
     
     #loop through each zombie to update
@@ -603,7 +693,7 @@ def handleZombies(screen,tilemap,tileset,zombies,player,fireSet):
         #if the zombie is outside...
         if (tilemap.getTile(zombie.getPos()).attributes['type']==MINE_BLOCK_UP):
             #dying animation. when the animation is complete, remove the zombie from the tilemap and the game
-            if(zombie.dying(fireSet,SPRITE_MASK_DELAY)):
+            if(zombie.dying(deathSet,SPRITE_MASK_DELAY)):
                 tilemap.clearMob(z)
                 zombies.remove(zombie)
                 break
@@ -611,34 +701,51 @@ def handleZombies(screen,tilemap,tileset,zombies,player,fireSet):
         
         #otherwise if the zombie is touching the player - perform special zombie action!
         elif (zombie.pos == player.pos):
-            #if its a hard killer zombie, end the game.
-            if(zombie.stats[ZOMBIE_TYPE]==ZOMBIE_TYPE_HARD):
-                #return instantly and end the game
-                return WIN_END
+            player.subStat(STAT_HP,1) #always do dmg to the player
+            playSound(SND_ZOMBIE) #play the zombie sound 
+            
+            # ALL THE DIFFERENT TYPES OF ZOMBIE LOGIC -----------------
+            #if its a extreme killer zombie (ghosts), steal bag, money and teleport random
+            if(zombie.stats[ZOMBIE_TYPE]==ZOMBIE_TYPE_EXTREME):
+                player.stats[STAT_MONEY]=0 
+                player.clearBag() #steal players bag
+                player.subStat(STAT_HP,1) #take an additonal life
+                teleportHome(screen,player,tilemap,tileset) #teleport player home
+                         
+            #if its a hard zombie, take hp and teleport random
+            elif(zombie.stats[ZOMBIE_TYPE]==ZOMBIE_TYPE_HARD):
+                player.clearBag() #steal players bag
+                teleportRandom(screen,player,tilemap,tileset) #teleport player randomly
             
             #if its a mediun zombie, steal the players cash and bag
             elif(zombie.stats[ZOMBIE_TYPE]==ZOMBIE_TYPE_MED):
                 player.stats[STAT_MONEY]=0
-                player.clearBag()
+                player.clearBag() #steal players bag
+                teleportHome(screen,player,tilemap,tileset) #send player home
             
             #if its an easy zombie, steal the bag and send player
             elif (zombie.stats[ZOMBIE_TYPE]==ZOMBIE_TYPE_EZ):
-                #basic zombie - clear the players bag and return him to home
-                resetPlayer(player)
-                player.clearBag()
-                tilemap.shift=(0,0)
+                player.clearBag() #steal players bag
+                teleportHome(screen,player,tilemap,tileset) #send player home
+            
+            #if players hp is 0 after all of this, return game over state
+            if(player.stats[STAT_HP]==0):
+                return WIN_END
             
             #if the game didn't end, the stat window needs to be updated, so set the return flag (FIXED)
             returnWin = WIN_STAT
         
-        #let the AI kick in to choose a direction,then try and act in that direction
-        nearTiles=tilemap.getNearTiles(zombie.getPos()) #get tiles around zombie
-        newDir=zombie.runAI(nearTiles)#get ai to choose path based on nearby tiles
-        
-        #try to act in the direction chosen
-        zTryResult = tryAction(screen,zombie,newDir,tilemap)
-        if(zTryResult):
-            zombie.actTile=zTryResult
+        #only run the AI and try actions if zombie is within range of its target (e.g player)
+        if (inRange(zombie,zombie.ai.target,ZOMBIE_AI_RANGE)):
+            #let the AI kick in to choose a direction,then try and act in that direction
+            nearTiles=tilemap.getNearTiles(zombie.getPos()) #get tiles around zombie
+            newDir=zombie.runAI(nearTiles)#get ai to choose path based on nearby tiles
+            
+            #try to act in the direction chosen
+            #(will ignore the tile type and always move (cept for blocked tiles!) when doing direction checks if zombie type = extreme. AI handles avoiding blocked tiles)
+            zTryResult = tryAction(screen,zombie,newDir,tilemap,(zombie.stats[ZOMBIE_TYPE]==ZOMBIE_TYPE_EXTREME))
+            if(zTryResult):
+                zombie.actTile=zTryResult
                 
         #update the zombie and get the returned action data
         zombieAct=zombie.update()
@@ -646,7 +753,7 @@ def handleZombies(screen,tilemap,tileset,zombies,player,fireSet):
         #if the zombie is hitting
         if (zombieAct==ACT_DIG):
             zHitTile = zombie.actTile #get the tile the zombie is trying to hit
-            zHitResult = zHitTile.hit(zombie.stats[STAT_STR])
+            zHitResult = zHitTile.hit(zombie.stats[STAT_STR]) #hit it
             
             #if the hit returned a result (broke?)
             if(zHitResult!=None):
@@ -687,9 +794,11 @@ def game(screen,level):
     zombies=list()
     for zData in options[GAME_OPT_ZOMBIES]:
         zombies = zombies + createZombies(zData.copy(),tilemap,TILESET,SPRITE_TEMPLATE,player,(1,len(aboveground))) #copy zombie data (zData) so it doesnt overwrite later plays
+        zombies = zombies + createZombies(zData.copy(),tilemap,TILESET,SPRITE_TEMPLATE,player,(1,len(aboveground))) #copy zombie data (zData) so it doesnt overwrite later plays
     tilemap.addMobs(zombies) #add zombies to the tilemap
     
-    setWinningTile(options[GAME_OPT_WIN_POS],tilemap,TILESET)#place the winning tile!
+    #place the winning tile! never allow random placement in the aboveground y-area or before half the y size of the map (whichever comes last!)
+    setWinningTile(options[GAME_OPT_WIN_POS],tilemap,TILESET,(1,max(len(aboveground),tilemap.size[Y]/2)))
 
     #setup the fire spriteset for any zombies that need to burn!
     fireImg=loadImage(IMG_FIRE,TILE_TRANSCOLOR)
@@ -703,6 +812,10 @@ def game(screen,level):
     #if fow is set, and the vision button exists (though why wouldnt it??), disable the button
     if (not options[GAME_OPT_FOW] and shopWin.getButton(SHOP_BTN_VISION)):
         shopWin.getButton(SHOP_BTN_VISION).disable()
+    
+    #intialize a playlist for the game music and start playing the first song (outside song)
+    playlist=[pygame.mixer.Sound(MUSIC_OUTSIDE),pygame.mixer.Sound(MUSIC_MINE)]
+    music=playMusic(None,playlist[0],MUSIC_VOL,MUSIC_FADETIME)
     
     #set pygame to "repeat" key-presses (basically key toggling)
     pygame.key.set_repeat(50,50)
@@ -758,7 +871,6 @@ def game(screen,level):
                     elif (clicked==SHOP_BTN_SP):
                         buyStat(player,STAT_SP,SHOP_COST_SP) #player bought sp
                     elif (clicked==SHOP_BTN_VISION):
-                        print 'test'
                         buyStat(player,STAT_VISION,SHOP_COST_VISION) #player bought vision
                     elif (clicked==MENU_BTN):
                         play=False #game is over (exits game loop) and player returned to main menu
@@ -768,7 +880,6 @@ def game(screen,level):
                     statWin=createStatWin(player)
 
         #always clear screen and redraw tilemap - doesn't matter if game is over or not
-        
         screen.fill(Color(0,0,0))
         tilemap.draw(screen)
         
@@ -784,15 +895,18 @@ def game(screen,level):
             #work horse function for handling the player
             updateUI=handlePlayer(screen,tilemap,TILESET,player)
             
-            #if any UI updates need to take place from handling the player, do them
+            #if any UI updates need to take place from handling the player, do them.
             if(updateUI==WIN_STAT):
                 statWin = createStatWin(player)
-            if (updateUI==WIN_END):
+            if (updateUI==WIN_END): #if handlePlayer returns WIN_END, you won the game
                 timeElapsed=pygame.time.get_ticks() - startTime #get time elapsed since game started
                 time=humanTime(pygame.time.get_ticks() - startTime) #convert time elapsed to minutes+seconds (human time!)
                 winTitle = "Got the Meth!"
                 if(bestTime(level,timeElapsed)):
                     winTitle = "New Highscore!"
+                
+                music.stop() #stop any music thats playing
+                playSound(SND_WINNING) #play the winning game sound
                      
                 endWin=createEndWin(winTitle,"Time : " + time[0] + " minutes, " + time[1] + " seconds")           
             
@@ -803,9 +917,20 @@ def game(screen,level):
             #if any UI updates need to take place from handling the zombies, do them.
             if(updateUI==WIN_STAT):
                 statWin = createStatWin(player)
-            elif(updateUI==WIN_END):
+            elif(updateUI==WIN_END): #if handleZombies returns WIN_END, game over
+                music.stop() #stop any music thats playing
+                playSound(SND_GAMEOVER) #play the game over sound
+                
+                #create the end window to display
                 endWin = createEndWin("Game Over","You have died!")
             
+            
+            #HANDLE MUSIC UPDATING BASED ON PLAYER POS
+            #if inside mine, play mine music. otherwise play outside music
+            if(tilemap.getTile(player.getPos()).attributes['type']==MINE_BLOCK_NONE):
+                music=playMusic(music,playlist[1],MUSIC_VOL,MUSIC_FADETIME)
+            else:
+                music=playMusic(music,playlist[0],MUSIC_VOL,MUSIC_FADETIME)
             
             #HANDLE WINDOW DRAWING 
             #if the player is sitting on a shop tile, show shop!
@@ -814,7 +939,7 @@ def game(screen,level):
                 statWin=createStatWin(player) #update the stat window
                 
                 if(not shopWin.visible):
-                    pygame.mixer.Sound('sounds/shop.wav').play(0) #play the shopping sound !
+                    playSound(SND_SHOP) #play the shopping sound !
                     shopWin.visible=True
             else: #otherwise....dont!
                 shopWin.visible=False
@@ -892,13 +1017,31 @@ def menu(screen):
         
         pygame.display.flip() #update the display
 
+#creates and displays a splash screen for a specified amount of time
+# screen - the screen to draw the splash to
+# delay - how long (in milliseconds) to keep up the splash
+def splash(screen,delay):
+    startTime=pygame.time.get_ticks()
+    elapsed=pygame.time.get_ticks()
+    bgImg = loadImage(IMG_MENUBG) #menus background image
+    
+    while(elapsed-startTime<delay):
+        elapsed=pygame.time.get_ticks()
+        
+        screen.blit(bgImg,(0,0))
+        
+        pygame.display.flip() #update the display
+
 # main program - sets up the display & start the game menu to control the rest of the action here-on-in
 def main():
     #setup game screen
-    gameScreen = pygame.display.set_mode(SCREEN_SIZE)
+    gameScreen = pygame.display.set_mode(SCREEN_SIZE,pygame.FULLSCREEN)
     
     #continue to loop through the menu & game until the program is exited
     while True:
+        #start the splash screen
+        splash(gameScreen,SPLASH_DELAY)
+        
         #start the menu, which in turn will start any games or otherwise
         menu(gameScreen)
 

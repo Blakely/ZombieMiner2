@@ -1,9 +1,12 @@
 #Filename: gameFunctions.py
 #Author: Ryan Blakely
 #Last Modified By: Ryan Blakely
-#Last Modified: Aug 5th, 2013
+#Last Modified: Aug 16th, 2013
 #Description: Functions required for the ZombieMiner2.py game
 
+#Revision History:
+# Aug 16,2013
+#   - all revision history in ZombieMiner2.py
 
 import pygame
 from pygame.locals import *

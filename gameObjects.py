@@ -1,7 +1,7 @@
 #Filename: gameObjects.py
 #Author: Ryan Blakely
 #Last Modified By: Ryan Blakely
-#Last Modified: Aug 5th, 2013
+#Last Modified: Aug 16th, 2013
 #Description: Objects required for the ZombieMiner2.py game
 
 #Revision History
@@ -29,6 +29,9 @@
 
 # Aug 5, 2013
 #   - comments! also minor changes to tweak the games difficulty/fun-ness
+
+# Aug 16,2013
+#   - all additional revision history after aug 5 is in ZombieMiner2.py
 
 import pygame,math,random,re
 from pygame.locals import *
